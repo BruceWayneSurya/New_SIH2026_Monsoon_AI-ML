@@ -159,19 +159,36 @@ def get_regime_for_date(date: Optional[str] = Query(None, description="Date in Y
         target_date = df["date"].iloc[-1]
         sub_df = df[df["date"] == target_date]
 
-    # Overall dominant regime on that date
-    regime_counts = sub_df["regime_name"].value_counts()
-    dominant_regime = regime_counts.index[0]
-    dom_id = int(sub_df[sub_df["regime_name"] == dominant_regime]["regime"].iloc[0])
+    regime_clf = STATE["regime_clf"]
+    if regime_clf is None:
+        raise HTTPException(status_code=503, detail="Regime classifier not loaded")
 
-    # Soft probabilities average across India
-    p_probs = {r: round(float((sub_df["regime_name"] == r).mean()), 3) for r in sub_df["regime_name"].unique()}
+    # Model output: mean classifier posterior over districts on this date.
+    # NOTE: the dataset's `regime` column is the generator's latent truth and must
+    # never be presented as a forecast. It is exposed separately, clearly labelled,
+    # for demo transparency only.
+    posteriors = regime_clf.predict_proba(sub_df)          # [n_districts, 7]
+    mean_posterior = posteriors.mean(axis=0)
+    dom_idx = int(np.argmax(mean_posterior))
+    dominant_regime = regime_clf.REGIME_NAMES[regime_clf.classes_[dom_idx]]
+
+    per_district = [regime_clf.classes_[i] for i in np.argmax(posteriors, axis=1)]
+    agreement_with_truth = float(np.mean(per_district == sub_df["regime"].to_numpy()))
 
     return {
         "date": target_date,
         "dominant_regime": dominant_regime,
-        "dominant_regime_id": dom_id,
-        "soft_probabilities": p_probs,
+        "dominant_regime_id": int(regime_clf.classes_[dom_idx]),
+        "soft_probabilities": {
+            regime_clf.REGIME_NAMES[c]: round(float(mean_posterior[i]), 3)
+            for i, c in enumerate(regime_clf.classes_)
+        },
+        "source": "classifier_posterior_mean_over_districts",
+        "demo_truth_agreement": round(agreement_with_truth, 3),
+        "truth_label_fraction": {
+            r: round(float((sub_df["regime_name"] == r).mean()), 3)
+            for r in sub_df["regime_name"].unique()
+        },
         "available_dates_range": [str(df["date"].min()), str(df["date"].max())]
     }
 
@@ -214,6 +231,12 @@ def get_corrected_forecast(date: Optional[str] = Query(None),
     prob_preds = hrc.predict_probabilities(sub_df, nwp_col=nwp_col)
     quant_preds = qr.predict_quantiles(sub_df, nwp_col=nwp_col)
 
+    # Dominant regime is the classifier's argmax, never the dataset's truth label.
+    pred_regime_names = [
+        regime_clf.REGIME_NAMES[regime_clf.classes_[i]] for i in np.argmax(p_regimes, axis=1)
+    ]
+    pred_regime_probs = p_regimes.max(axis=1)
+
     districts_list = []
     for idx, (_, row) in enumerate(sub_df.iterrows()):
         raw_val = float(preds["raw_nwp"][idx])
@@ -236,7 +259,9 @@ def get_corrected_forecast(date: Optional[str] = Query(None),
             "centroid_lat": row["latitude"],
             "centroid_lon": row["longitude"],
             "elevation_m": row["elevation"],
-            "dominant_regime": row["regime_name"],
+            "dominant_regime": pred_regime_names[idx],
+            "regime_probability": round(float(pred_regime_probs[idx]), 3),
+            "demo_truth_regime": row["regime_name"],
             "raw_nwp": round(raw_val, 2),
             "monsooniq_corrected": round(corr_val, 2),
             "bias_delta": round(delta, 2),

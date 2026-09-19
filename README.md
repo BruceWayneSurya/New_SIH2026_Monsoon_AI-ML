@@ -7,7 +7,7 @@
 [![Smart India Hackathon](https://img.shields.io/badge/Smart%20India%20Hackathon-SIH%202026-orange.svg)](https://www.sih.gov.in/)
 [![Tests](https://img.shields.io/badge/pytest-21%20passed-success.svg)](tests/)
 
-MonsoonIQ is a meteorologically-grounded, regime-aware AI post-processing system designed to eliminate systematic Numerical Weather Prediction (NWP) forecast errors across India's complex monsoon climatology. By identifying the prevailing synoptic weather regime and routing predictions through a specialized Mixture-of-Experts (MoE) architecture, MonsoonIQ delivers calibrated grid-level (0.25°) and district-level rainfall forecasts, extreme precipitation probabilities, interactive geospatial dashboards, bilingual operational advisories (English & Hindi), and automated verification reporting.
+MonsoonIQ is a meteorologically-grounded, regime-aware AI post-processing system designed to eliminate systematic Numerical Weather Prediction (NWP) forecast errors across India's complex monsoon climatology. By identifying the prevailing synoptic weather regime and routing predictions through a specialized Mixture-of-Experts (MoE) architecture, MonsoonIQ targets calibrated grid-level and district-level rainfall forecasts (in this prototype: 53 district cells on a 0.5° synthetic grid — see Limitations), extreme precipitation probabilities, interactive geospatial dashboards, bilingual operational advisories (English & Hindi), and automated verification reporting.
 
 ---
 
@@ -17,10 +17,10 @@ MonsoonIQ is a meteorologically-grounded, regime-aware AI post-processing system
 flowchart TD
     subgraph Data Ingestion
         R1[NOAA GFS / NCMRWF Archives] --> D[Data Processing & Validation]
-        R2[IMD 0.25° Gridded Observations] --> D
+        R2[IMD 0.25° Gridded Observations - target source] --> D
         R3[ECMWF ERA5 Atmospheric Predictors] --> D
         S1[Physically-Plausible Synthetic Engine] --> D
-        D --> DS[Standardized 0.25° Grid & District GeoJSON]
+        D --> DS[Standardized 0.5° Synthetic Grid & 53 District Cells]
     end
 
     subgraph Regime Classification
@@ -31,7 +31,7 @@ flowchart TD
     end
 
     subgraph Mixture of Experts Bias Correction
-        DS --> NWP[Raw NWP Day 1 to Day 5]
+        DS --> NWP[Raw NWP Day 1 (Day 2-5 columns exist but are unverified)]
         NWP & FE & SP --> MOE[Soft-Blended Mixture of Experts]
         subgraph Experts [7 Dedicated Regime Experts]
             E1[Active Monsoon Expert]
@@ -57,7 +57,16 @@ flowchart TD
 
 ---
 
-## Key Performance Results (Held-Out Test Set 2022–2023)
+## Prototype Performance on the Seeded Synthetic Dataset (Held-Out 2022–2023)
+
+> [!WARNING]
+> **These are not real-world skill numbers.** Every row below is measured against a
+> *synthetic* dataset whose raw-NWP error structure was authored by
+> `src/data/synthetic_generator.py` (a multiplicative Western Ghats dry bias, a
+> +12 mm break-monsoon wet bias over central India, a `np.roll` depression
+> displacement, and so on). Beating a raw forecast whose errors you wrote is a
+> consistency check on the pipeline, not evidence of skill against real NWP.
+> They must never be quoted as operational skill. See [AUDIT.md](AUDIT.md).
 
 Evaluated on **27,666 test records** using strict temporal separation (Training: 2016–2020, Validation: 2021, Test: 2022–2023).
 
@@ -68,10 +77,17 @@ Evaluated on **27,666 test records** using strict temporal separation (Training:
 | **Global LightGBM (Baseline 3)** | 3.15 | 1.86 | +0.01 | 0.561 | 0.552 | 81.3% | 34.2% |
 | **MonsoonIQ (Regime MoE)** | **2.79** | **1.70** | **-0.03** | **0.569** | **0.560** | **83.6%** | **35.0%** |
 
-> **Key Findings:**
-> - **62.0% RMSE Reduction** compared to raw numerical weather prediction (Raw NWP 7.35 mm → MonsoonIQ 2.79 mm).
-> - **187% CSI Improvement on Heavy Rainfall Events** (Threat score 0.198 → 0.569).
-> - **Non-overlapping 95% Bootstrap Confidence Intervals** confirm statistical significance at $P < 0.01$.
+> **Key Findings (read the third one before quoting the first two):**
+> - Absolute improvement over raw NWP: 62.0% RMSE reduction and a 187% increase in
+>   heavy-rain CSI. **Both are guaranteed by construction** — the raw NWP field is
+>   the truth field pushed through a known, invertible error model.
+> - MonsoonIQ beats the *regime-agnostic* Global LightGBM on RMSE (2.79 vs 3.15,
+>   day-block bootstrap 95% CI on the difference [-0.48, -0.24]).
+> - MonsoonIQ **does not** beat the regime-agnostic Global LightGBM on the heavy-rain
+>   categorical score that this statement is judged on: ΔCSI = +0.0075,
+>   95% CI [-0.010, +0.026], P(Δ>0) = 0.82. With 522 verified days the
+>   regime-conditioning value-add is not established. Reproduce with
+>   `python scripts/regime_value_audit.py`.
 
 ---
 
@@ -84,11 +100,14 @@ MonsoonIQ/
 │   ├── model_config.yaml              # Hyperparameters, temporal splits, quantile alphas
 │   └── verification_config.yaml       # Verification thresholds, FSS scales, baseline IDs
 ├── data/
-│   ├── raw/                           # Landing zone for CDS/NOAA/IMD real data downloads
-│   ├── synthetic/                     # 8-year seeded dataset (district_daily.parquet, grid_sample_dates.npz)
+│   ├── raw/                           # Landing zone for CDS/NOAA/IMD real data downloads (empty)
+│   ├── synthetic/                     # 8-year seeded dataset on a 0.5° synthetic grid
+│   │                                  #   (district_daily.parquet, grid_sample_dates.npz)
 │   ├── geojson/
-│   │   └── india_districts.geojson    # Geographic boundaries and centroids for Indian districts
-│   └── sample_depression_tracks.csv  # Historical depression track records for validation
+│   │   └── india_districts.geojson    # 53 synthetic rectangular cells labelled with district
+│   │                                  #   names/centroids — NOT real district boundaries
+│   └── sample_depression_tracks.csv  # 17 hand-entered depression dates (see AUDIT.md §7:
+│                                      #   labels/intensities disagree with IMD records)
 ├── src/
 │   ├── data/
 │   │   ├── downloader.py             # Downloaders for CDS ERA5, NOAA GFS, IMD with resume support
@@ -110,7 +129,8 @@ MonsoonIQ/
 │   │   └── heavy_rain_classifier.py  # Calibrated binary models for 64.5, 115.6, 204.5 mm
 │   ├── verification/
 │   │   ├── metrics.py                # RMSE, bias, ETS, CSI, POD, FAR, FSS (1,3,5,9), ROC, Brier
-│   │   ├── evaluator.py              # Stratified evaluation by regime, lead time, region & bootstrap CIs
+│   │   │                             #   NB: FSS and lead-time stratification are NOT yet reported
+│   │   ├── evaluator.py              # Stratified evaluation by regime and zone (lead-time block is empty)
 │   │   └── report_generator.py       # Publication-quality ReportLab PDF generator
 │   ├── api/
 │   │   ├── main.py                   # FastAPI application with caching and CORS
@@ -182,7 +202,15 @@ powershell -ExecutionPolicy Bypass -File ./scripts/ui.ps1
    pytest tests/ -v
    ```
 
-4. **Launch Application**:
+4. **Reproduce the regime-value audit** (the ablation that says what the
+   regime conditioning is actually worth on this dataset):
+   ```bash
+   PYTHONPATH=. python scripts/regime_value_audit.py
+   # -> artifacts/metrics/regime_value_audit.json
+   # -> artifacts/plots/regime_value_curve.png
+   ```
+
+5. **Launch Application**:
    ```bash
    # Terminal 1: Backend API
    uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
@@ -195,7 +223,19 @@ powershell -ExecutionPolicy Bypass -File ./scripts/ui.ps1
 
 ---
 
+> [!NOTE]
+> Full audit of this repository — claims that do not hold, missing deliverables,
+> and the prioritised fix list — is in **[AUDIT.md](AUDIT.md)**.
+
+---
+
 ## Switching from Synthetic to Real IMD / GFS Data
+
+> [!CAUTION]
+> This path is **written but has never been executed**: there is no real data in
+> the repository, no test covers the downloaders, and `data_mode: "real"` is not
+> read by `src/train.py` or `src/evaluate.py` (both hard-code the synthetic
+> parquet). Treat everything below as a plan, not as a working feature.
 
 To switch from synthetic demonstration mode to real operational data:
 1. Open `configs/model_config.yaml` and set:
@@ -226,10 +266,32 @@ To switch from synthetic demonstration mode to real operational data:
 
 ## Limitations and Honest Caveats
 
+0. **Not yet evidence of skill.** The pipeline runs end-to-end and is fully
+   reproducible, but everything below is measured on synthetic data whose NWP
+   error model was written by the same repository. The regime-aware architecture
+   currently shows *no* statistically significant advantage over a single
+   regime-agnostic LightGBM on the heavy-rainfall categorical score
+   (ΔCSI +0.0075, 95% CI [-0.010, +0.026]); see [AUDIT.md](AUDIT.md) §1–§3.
 1. **Synthetic Mode Notice:** The demonstration numbers in this repository are evaluated on an 8-year seeded synthetic dataset (2016–2023) modeling IMD climatology distributions, Western Ghats topography, and documented NWP regime biases. All synthetic results are explicitly flagged as synthetic in the UI, PDF reports, and JSON metadata.
 2. **Rapid Cyclogenesis:** In events of rapid monsoon depression intensification over the Bay of Bengal, storm center position errors can evolve on sub-6-hour scales. Post-processing based on 24-hour accumulated NWP requires assimilation of real-time Doppler weather radar (DWR) data for sub-daily nowcasting.
 3. **Microscale Valley Cloudbursts:** While MonsoonIQ corrects broader orographic biases, localized cloudbursts (&gt;100 mm/hour in a single narrow Himalayan gorge) occur at sub-kilometer scales that cannot be fully resolved by 0.25° NWP models.
-4. **Extreme Event Sample Sizes:** Rainfall events exceeding 204.5 mm/day represent &lt;0.05% of all daily records in the historical climatology. While scale-pos weighting and isotonic probability calibration stabilize predictions, users should always inspect the P90 uncertainty interval rather than relying solely on deterministic values.
+4. **Spatial resolution:** the prototype grid is **0.5°**, not the 0.25° named in
+   `configs/model_config.yaml`; the "0.25° Grid" toggle in the UI draws circles at
+   district centroids. Nothing in the verification is computed on a grid, so FSS —
+   one of the metrics this statement names — is not yet reported.
+5. **Lead times:** every model is trained and verified on `raw_nwp_d1` only. The
+   API accepts `lead_time_days=1..5` and feeds Day 2–5 through the Day-1 models
+   without any verification.
+6. **Geography:** the 53 "districts" are synthetic rectangles, and the synthetic
+   topography puts the Western Ghats ridge roughly 2° west of the real crest, so
+   e.g. the API reports 0.36 m elevation for Wayanad. Replace both before showing
+   the map to a meteorologist.
+7. **Provenance:** `data/sample_depression_tracks.csv` cites "IMD Monsoon Bulletin
+   YYYY" for rows whose system names, intensities and positions do not match the
+   IMD record (e.g. 2016-07-06 is listed as a Bay of Bengal deep depression; IMD's
+   record for that date is a land depression over north-central India). Verify
+   against an official track list or drop the file and the claim with it.
+8. **Extreme Event Sample Sizes:** Rainfall events exceeding 204.5 mm/day represent &lt;0.05% of all daily records in the historical climatology. While scale-pos weighting and isotonic probability calibration stabilize predictions, users should always inspect the P90 uncertainty interval rather than relying solely on deterministic values.
 
 ---
 
