@@ -19,6 +19,20 @@ from fastapi.testclient import TestClient
 
 from src.api.main import app, load_artifacts
 
+# Fields that change on every run. They are replaced with a fixed placeholder so a
+# re-recording only produces a diff when the payload actually changed, and so the
+# committed fixtures do not churn on every `make fixtures`.
+VOLATILE = {"built_utc", "build_seconds", "issued_utc", "loaded_utc", "elapsed_seconds"}
+
+
+def sanitize(value):
+    if isinstance(value, dict):
+        return {k: ("<volatile>" if k in VOLATILE else sanitize(v)) for k, v in value.items()}
+    if isinstance(value, list):
+        return [sanitize(v) for v in value]
+    return value
+
+
 ROUTES = [
     ("health", "/health"),
     ("timeline", "/timeline"),
@@ -63,7 +77,7 @@ def main():
             print(f"skip {path}: HTTP {res.status_code}")
             continue
         with open(os.path.join(args.out, f"{name}.json"), "w", encoding="utf-8") as f:
-            json.dump(res.json(), f, separators=(",", ":"))
+            json.dump(sanitize(res.json()), f, separators=(",", ":"))
         index[path] = name
         print(f"wrote {name}.json ({len(res.content) / 1024:.1f} KiB)")
 

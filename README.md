@@ -537,10 +537,18 @@ cd frontend && npm run smoke        # renders the whole app against recorded fix
 PYTHONPATH=. python scripts/dump_api_fixtures.py --date 2020-08-05 --lead 1   # re-record fixtures
 ```
 
-* **Determinism.** The generator is seeded; `scripts/build_grid_samples.py` refuses to write a
-  sampled grid archive unless the re-simulated fields agree with `grid_sample_dates.npz` on the
-  overlapping dates. Training records sample counts and artifact hashes in
-  `training_manifest.json`.
+* **Determinism, measured.** The generator is seeded, and repeated runs inside one environment
+  are **bit-identical**: three consecutive `make data` runs produced the same SHA-256 for
+  `district_daily.parquet`. Across environments, NumPy/BLAS version differences move the archive
+  by ~1e-13 (0.65% of cells, largest absolute difference 4.5e-13), which is why
+  `scripts/build_grid_samples.py` gates on a 1e-4 tolerance and refuses to write if the
+  re-simulated meteorology disagrees with the committed sample.
+* **Traceable results.** Every `make evaluate` run records the archive's SHA-256 (first 16 hex)
+  in `provenance_detail.archive_sha256_16`, surfaced in the console's Method page and the model
+  card. Re-running the whole chain — `make data && make grid && make train && make evaluate &&
+  make console` — after regenerating the archive reproduced **all 1,646 published fields
+  exactly**; the only difference was the new fingerprint itself. Training records sample counts
+  and artifact hashes in `training_manifest.json`.
 * **Test counts.** 34 pytest tests (metrics, payload contracts, leakage guards, pipeline smoke,
   bootstrap grouping) and 19 console smoke checks. `tests/test_api.py` locks the payload shapes
   the UI depends on, so a schema change fails in CI rather than in the browser.

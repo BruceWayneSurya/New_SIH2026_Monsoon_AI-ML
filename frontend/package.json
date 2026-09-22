@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "oxlint"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",

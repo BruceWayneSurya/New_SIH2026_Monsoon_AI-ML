@@ -19,6 +19,7 @@ Nothing here writes a claim that the numbers do not support.
 """
 
 import os
+import hashlib
 import json
 import logging
 from typing import Dict, Any, List, Optional, Tuple
@@ -54,8 +55,27 @@ SYSTEM_LABELS = {
 }
 
 
-def detect_provenance(metadata_path: str = "data/synthetic/dataset_metadata.json") -> Dict[str, Any]:
+def _archive_fingerprint(path: str) -> Optional[str]:
+    """First 16 hex chars of the archive's SHA-256, or None if it is missing.
+
+    The generator is bit-reproducible inside one environment, but last-bit
+    differences in NumPy/BLAS across environments move the archive by ~1e-13.
+    Recording the fingerprint with the results means any artifact can be traced
+    back to the exact archive it was scored against.
+    """
+    if not os.path.exists(path):
+        return None
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()[:16]
+
+
+def detect_provenance(metadata_path: str = "data/synthetic/dataset_metadata.json",
+                      archive_path: str = "data/synthetic/district_daily.parquet") -> Dict[str, Any]:
     """Read provenance from the dataset's own metadata instead of hard-coding it."""
+    fingerprint = _archive_fingerprint(archive_path)
     if os.path.exists(metadata_path):
         try:
             with open(metadata_path, "r", encoding="utf-8") as f:
@@ -67,11 +87,13 @@ def detect_provenance(metadata_path: str = "data/synthetic/dataset_metadata.json
                 "domain": meta.get("domain"),
                 "districts": meta.get("districts_count"),
                 "total_days": meta.get("total_days"),
+                "archive_sha256_16": fingerprint,
                 "note": meta.get("provenance_note", ""),
             }
         except Exception as exc:  # pragma: no cover
             logger.warning("Could not read dataset metadata: %s", exc)
-    return {"provenance": "UNKNOWN_DATASET", "is_synthetic": None}
+    return {"provenance": "UNKNOWN_DATASET", "is_synthetic": None,
+            "archive_sha256_16": fingerprint}
 
 
 class VerificationEvaluator:

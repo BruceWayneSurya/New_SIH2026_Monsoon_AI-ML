@@ -175,7 +175,14 @@ export default function Method() {
                     : '—'}
                 </dd>
                 <dt>Pipeline runtime</dt><dd className="mono">{fmt(card.training?.elapsed_seconds, 1)} s</dd>
+                <dt>Archive fingerprint</dt>
+                <dd className="mono">{card.data?.archive_sha256_16 || '—'}</dd>
               </dl>
+              <div className="tiny muted" style={{ marginTop: 6 }}>
+                The fingerprint is the SHA-256 (first 16 hex) of the archive these results were
+                scored against. `make evaluate` writes it next to every metric, so any number can
+                be traced back to the exact data that produced it.
+              </div>
               <div className="tiny muted" style={{ marginTop: 8 }}>
                 {card.data?.provenance_detail?.disclaimer
                   || 'Synthetic archive generated inside this repository; not observed IMD data.'}

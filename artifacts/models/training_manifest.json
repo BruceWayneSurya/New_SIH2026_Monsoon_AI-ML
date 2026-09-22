@@ -254,32 +254,32 @@
     "train_rmse": 2.7013,
     "skipped": false
   },
-  "elapsed_seconds": 35.5,
+  "elapsed_seconds": 35.16,
   "dataset": {
     "path": "data/synthetic/district_daily.parquet",
     "rows": 110664,
-    "sha256_16": "737edfa4d3555687"
+    "sha256_16": "0bb61ddeab888cde"
   },
   "artifacts": {
     "regime_classifier": {
-      "sha256_16": "4a457d8d4f080f00",
-      "bytes": 1273835
+      "sha256_16": "d8f1b592ee4f9137",
+      "bytes": 1273819
     },
     "mixture_of_experts": {
-      "sha256_16": "13e5df753b6d5a5b",
-      "bytes": 1874440
+      "sha256_16": "0574d99c221ee8af",
+      "bytes": 1874404
     },
     "quantile_regressor": {
-      "sha256_16": "bcb07eceb8b07255",
-      "bytes": 737774
+      "sha256_16": "c4af41271fa0c608",
+      "bytes": 737769
     },
     "heavy_rain_module": {
-      "sha256_16": "b49a28c937120907",
+      "sha256_16": "b2e6356628090adc",
       "bytes": 472149
     },
     "lead_time_bundle": {
-      "sha256_16": "1a0890f5f2387dc6",
-      "bytes": 15321577
+      "sha256_16": "1e11008f32f45641",
+      "bytes": 15321113
     },
     "grid_correction": {
       "sha256_16": "45230d5fddab8e87",

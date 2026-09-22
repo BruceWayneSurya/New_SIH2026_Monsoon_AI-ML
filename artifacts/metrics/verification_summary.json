@@ -13,6 +13,7 @@
     },
     "districts": 53,
     "total_days": 2088,
+    "archive_sha256_16": "ffc085a6e909a37a",
     "note": "Synthetic dataset generated with IMD climatology distributions, seeded physics, and documented NWP regime biases. All results are synthetic."
   },
   "verification_period": {

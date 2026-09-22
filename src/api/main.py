@@ -270,6 +270,8 @@ def model_card():
             "provenance": (verification.get("data_provenance")
                            or STATE["console_meta"].get("provenance")),
             "provenance_detail": verification.get("provenance_detail", {}),
+            "archive_sha256_16": (verification.get("provenance_detail", {})
+                                  or {}).get("archive_sha256_16"),
             "verification_period": verification.get("verification_period", {}),
         },
         "training": {
