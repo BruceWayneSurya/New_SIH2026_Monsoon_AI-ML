@@ -22,7 +22,8 @@ from src.api.main import app, load_artifacts
 # Fields that change on every run. They are replaced with a fixed placeholder so a
 # re-recording only produces a diff when the payload actually changed, and so the
 # committed fixtures do not churn on every `make fixtures`.
-VOLATILE = {"built_utc", "build_seconds", "issued_utc", "loaded_utc", "elapsed_seconds"}
+VOLATILE = {"built_utc", "build_seconds", "issued_utc", "loaded_utc", "elapsed_seconds",
+            "sent", "effective", "expires", "onset"}  # the last four are CAP alert timestamps
 
 
 def sanitize(value):
