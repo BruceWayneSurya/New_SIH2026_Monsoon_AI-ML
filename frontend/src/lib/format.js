@@ -140,3 +140,37 @@ export function shortDate(iso) {
     day: '2-digit', month: 'short', timeZone: 'UTC',
   });
 }
+
+/** IMD thresholds the warning categories and the probability heads are keyed to. */
+export const IMD_THRESHOLDS = [
+  [64.5, 'heavy'], [115.6, 'very heavy'], [204.5, 'extremely heavy'],
+];
+
+/**
+ * Which criterion put a district in its category.
+ *
+ * Mirrors AdvisoryGenerator.determine_alert_level in src/api/advisory.py, clause
+ * for clause and in the same order — the console shows the rule that fired so a
+ * warning can be audited instead of taken on trust, and so a warning driven by
+ * exceedance probability is distinguishable at a glance from one driven by the
+ * predicted amount. `scripts/smoke.mjs` fails if this drifts from the API.
+ */
+export function categoryBasis(d) {
+  if (!d) return null;
+  const maxRain = Math.max(d.p90_mm ?? d.p90 ?? 0, d.corrected_mm ?? d.corrected ?? 0);
+  const ph = d.p_heavy ?? 0;
+  const pvh = d.p_very_heavy ?? 0;
+  const mean = d.corrected_mm ?? d.corrected ?? 0;
+  const mm = (v) => `${fmt(v)} mm`;
+
+  const at = (category, source, text) => ({ category, source, text });
+  if (maxRain >= 204.5) return at('red', 'amount', `predicted maximum ${mm(maxRain)} ≥ 204.5 mm`);
+  if (pvh >= 0.65) return at('red', 'probability', `P(≥115.6 mm) = ${pct(pvh, 0)} ≥ 65%`);
+  if (maxRain >= 115.6) return at('orange', 'amount', `predicted maximum ${mm(maxRain)} ≥ 115.6 mm`);
+  if (pvh >= 0.35) return at('orange', 'probability', `P(≥115.6 mm) = ${pct(pvh, 0)} ≥ 35%`);
+  if (ph >= 0.70) return at('orange', 'probability', `P(≥64.5 mm) = ${pct(ph, 0)} ≥ 70%`);
+  if (maxRain >= 64.5) return at('yellow', 'amount', `predicted maximum ${mm(maxRain)} ≥ 64.5 mm`);
+  if (ph >= 0.30) return at('yellow', 'probability', `P(≥64.5 mm) = ${pct(ph, 0)} ≥ 30%`);
+  if (mean >= 35) return at('yellow', 'amount', `district mean ${mm(mean)} ≥ 35 mm`);
+  return at('green', 'none', 'no warning criterion met');
+}

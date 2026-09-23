@@ -261,6 +261,7 @@ conversational framing anywhere in the product.
 | Readable under a projector | Every foreground colour was measured against all four surfaces: the lowest ratio in the palette is 4.50:1, above the WCAG AA floor of 4.5:1; primary text sits at 14.9–17.0:1 and secondary at 10.3–11.8:1. |
 | Keyboard-first | `←/→` days, `1–5` lead day, `n/p` next or previous significant day, `l` map layer, `b` bulletin, `s` story mode, `h` overview, `?` shortcut list. A duty officer on a phone call never has to find a control. |
 | Degrade, never blank | The map sits in an error boundary; if tiles or canvas are unavailable the table, warnings and advisory still render, with a sentence saying what failed. |
+| A warning can be audited | Every category on screen carries the criterion that produced it — predicted amount or exceedance probability, with the threshold that was crossed. Probability-driven warnings say so explicitly, because those are the ones a duty officer should double-check. |
 | Say when data is stale | If the engine does not answer for a date, the console keeps the last successful load on screen, dims it, names the date it actually belongs to, shows the HTTP detail and offers a retry — rather than silently showing yesterday's field under today's heading. |
 
 **The opening frame.** The first screen is the forecast itself: a full-bleed map of India with every
@@ -549,7 +550,7 @@ transferable: the harness, not the synthetic numbers, is the deliverable.
 4. **Coarse spatial resolution.** 0.5° grid; districts are simplified boxes; sub-kilometre
    orographic extremes are unresolved. Real deployment needs IMD 0.25°/0.125° data.
 5. **No real-time ingestion.** The architecture supports it (an ingestion adapter writes the same
-   feature frame), but no live scheduler, no GTS/MOSDAC feed, no QC for missing/晚 fields in this
+   feature frame), but no live scheduler, no GTS/MOSDAC feed, no QC for missing or physically implausible fields in this
    prototype.
 6. **Bias towards climatology.** Statistical post-processing cannot invent a rainfall maximum the
    dynamics never placed; the value it adds is restoring amplitude and sharpness, not predicting
@@ -559,6 +560,17 @@ transferable: the harness, not the synthetic numbers, is the deliverable.
    not been verified on real transition cases.
 8. **Advisory text is rule-based.** It is generated from thresholds and regime, in English and
    Hindi, and is deliberately not LLM-generated: a public warning must be traceable to a rule.
+9. **The red rule can fire on probability alone, and the very-heavy head is nearly degenerate.**
+   `determine_alert_level` promotes a district to red when P(≥115.6 mm) ≥ 0.65, as well as when the
+   predicted total reaches 204.5 mm. Measured over 114 sampled dates (6,042 district-days), 13 red
+   warnings were issued and **4 of them had no rainfall value above 115.6 mm** — the label came from
+   the probability clause alone. The cause is upstream: P(≥115.6 mm) and P(≥64.5 mm) come from
+   separately fitted, separately calibrated heads whose outputs are reconciled only by a `min()`
+   clamp, so on the fixture date the two are numerically identical for 49 of 53 districts. The
+   console now prints the criterion behind every category, which is how this was found, and marks
+   probability-driven warnings distinctly. Fixing it means a nested head (P(≥115.6 | ≥64.5)) or a
+   monotone ordinal model and a re-run of §10 — a modelling change rather than a display change, so
+   it is left visible here rather than quietly patched.
 
 ---
 
@@ -569,6 +581,7 @@ transferable: the harness, not the synthetic numbers, is the deliverable.
 | 1 (this repo) | Full pipeline + harness + console on a synthetic archive | `make data && make train && make evaluate` reproduces every figure |
 | 2 | IMD 0.25° gridded rainfall + archived NWP for 2016–2023 | Same harness, no code change; skill table recomputed against observations |
 | 3 | Regime-specific exceedance heads; more seasons for thin strata | ΔCSI vs agnostic significant at 95% on ≥3 regimes |
+| 3b | Nested exceedance head: P(≥115.6 \| ≥64.5) instead of independently calibrated heads reconciled by a clamp (see §14.9) | `p_very_heavy` stops equalling `p_heavy`, and no red warning is issued without a rainfall value or a genuinely distinct probability behind it |
 | 4 | Operational ingest (GTS/MOSDAC), scheduler, missing-data QC | Fresh forecast visible in the console within 15 minutes of model availability |
 | 5 | Pilot with one state SDMA: warnings alongside the official bulletin, blind | Measured lead-time gain and false-alarm cost in a real monsoon season |
 
@@ -595,7 +608,7 @@ PYTHONPATH=. python scripts/dump_api_fixtures.py --date 2020-08-05 --lead 1   # 
   exactly**; the only difference was the new fingerprint itself. Training records sample counts
   and artifact hashes in `training_manifest.json`.
 * **Test counts.** 34 pytest tests (metrics, payload contracts, leakage guards, pipeline smoke,
-  bootstrap grouping) and 42 console smoke checks. `tests/test_api.py` locks the payload shapes
+  bootstrap grouping) and 47 console smoke checks. `tests/test_api.py` locks the payload shapes
   the UI depends on, so a schema change fails in CI rather than in the browser.
 * **The console smoke test** (`frontend/scripts/smoke.mjs`) renders the entire application in
   jsdom against recorded API responses — including that the overview screen renders before any

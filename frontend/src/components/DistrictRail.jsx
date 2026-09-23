@@ -1,17 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../api';
-import { CATEGORY_META, REGIME_COLOR, fmt, pct, signed } from '../lib/format';
+import { CATEGORY_META, IMD_THRESHOLDS, REGIME_COLOR, categoryBasis, fmt, pct, signed } from '../lib/format';
 
-function Band({ p10, p50, p90, raw, corrected, max = 260 }) {
+/** Axis top: the smallest round number above everything that has to fit, so a
+ *  value can never be clamped onto the right edge and lose its identity. */
+function bandTop(values) {
+  const peak = Math.max(...values.filter((v) => Number.isFinite(v)), 65);
+  return [65, 100, 150, 260, 350, 500, 750, 1000].find((s) => s >= peak) ?? Math.ceil(peak / 500) * 500;
+}
+
+function Band({ p10, p50, p90, raw, corrected }) {
+  const max = bandTop([p10, p50, p90, raw, corrected, 65]);
   const pos = (v) => `${Math.min((Math.max(v, 0) / max) * 100, 100)}%`;
+  // Five evenly spaced labels, so the printed numbers actually sit under the
+  // values they name.
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(max * f));
   return (
     <div>
       <div className="band">
-        <div className="band-range" style={{ left: pos(p10), width: `${Math.max(((p90 - p10) / max) * 100, 1)}%` }} />
-        <div className="band-mid" style={{ left: pos(p50) }} title={`median ${fmt(p50)} mm`} />
-        {raw !== undefined && <div className="band-raw" style={{ left: pos(raw) }} title={`raw model ${fmt(raw)} mm`} />}
+        {IMD_THRESHOLDS.filter(([mm]) => mm <= max).map(([mm, label]) => (
+          <div key={mm} className={`band-thr thr-${label.split(' ')[0]}`} style={{ left: pos(mm) }}
+               title={`IMD ${label} threshold ${mm} mm`} />
+        ))}
+        <div className="band-range" style={{ left: pos(p10), width: `${Math.max(((p90 - p10) / max) * 100, 1)}%` }}
+             title={`P10–P90 ${fmt(p10)}–${fmt(p90)} mm`} />
+        <div className="band-mid" style={{ left: pos(p50) }} title={`P50 ${fmt(p50)} mm`} />
+        {raw !== undefined && raw !== null && (
+          <div className="band-raw" style={{ left: pos(raw) }} title={`raw model ${fmt(raw)} mm`} />
+        )}
+        {corrected !== undefined && corrected !== null && (
+          <div className="band-corrected" style={{ left: pos(corrected) }}
+               title={`corrected ${fmt(corrected)} mm`} />
+        )}
       </div>
-      <div className="band-scale"><span>0</span><span>65</span><span>130</span><span>260 mm</span></div>
+      <div className="band-scale">
+        {ticks.map((t, i) => <span key={t}>{t}{i === ticks.length - 1 ? ' mm' : ''}</span>)}
+      </div>
+      <div className="band-key tiny muted">
+        <span><i className="k-band" /> P10–P90</span>
+        <span><i className="k-mid" /> corrected (P50)</span>
+        <span><i className="k-raw" /> raw model</span>
+        <span><i className="k-thr" /> IMD warning thresholds</span>
+      </div>
     </div>
   );
 }
@@ -65,6 +95,7 @@ export default function DistrictRail({ districtId, date, lead, onClose }) {
   }
 
   const cat = CATEGORY_META[data.category];
+  const basis = categoryBasis(data);
   const posterior = Object.entries(data.regime_posterior || {})
     .sort((a, b) => b[1] - a[1]).slice(0, 4);
   const trend = data.lead_trend || [];
@@ -99,10 +130,19 @@ export default function DistrictRail({ districtId, date, lead, onClose }) {
             </div>
           </div>
 
-          <div className="small muted" style={{ marginBottom: 4 }}>
-            Predictive distribution — band is P10–P90, line is the median, red tick is the raw model
+          <div className={`basis basis-${basis?.source || 'none'}`}>
+            <span className="basis-tag">{data.category_label}</span>
+            {basis?.text}
+            {basis?.source === 'probability' && (
+              <span className="muted"> · issued on exceedance probability, not on a predicted total</span>
+            )}
           </div>
-          <Band p10={data.p10_mm} p50={data.p50_mm} p90={data.p90_mm} raw={data.raw_mm} />
+
+          <div className="small muted" style={{ marginTop: 12, marginBottom: 5 }}>
+            Predictive distribution for this district
+          </div>
+          <Band p10={data.p10_mm} p50={data.p50_mm} p90={data.p90_mm}
+                raw={data.raw_mm} corrected={data.corrected_mm} />
 
           <dl className="kv" style={{ marginTop: 10 }}>
             <dt>P(≥ 64.5 mm)</dt><dd>{pct(data.p_heavy, 0)}</dd>

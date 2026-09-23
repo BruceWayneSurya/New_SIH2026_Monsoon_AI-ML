@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { GeoJSON, MapContainer, TileLayer, CircleMarker, Tooltip, Rectangle } from 'react-leaflet';
 import {
   CATEGORY_META, CATEGORY_FILL, REGIME_COLOR, RAIN_LEGEND, rainColor, adjustmentColor,
-  probabilityColor, fmt,
+  probabilityColor, categoryBasis, fmt,
 } from '../lib/format';
 
 const LAYERS = [
@@ -60,9 +60,21 @@ export default function MapPanel({
         <span className="panel-title">
           Spatial view
           <span className="muted small" style={{ marginLeft: 8, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
-            {hovered
-              ? `${hovered.district_name} — ${fmt(hovered.corrected_mm)} mm corrected, raw ${fmt(hovered.raw_mm)} mm`
-              : 'click a district to inspect it'}
+            {hovered ? (
+              <>
+                {hovered.district_name} — {fmt(hovered.corrected_mm)} mm corrected, raw{' '}
+                {fmt(hovered.raw_mm)} mm
+                {hovered.category && (
+                  <>
+                    {' · '}
+                    <span className={`cat-chip cat-${hovered.category}`}>
+                      {CATEGORY_META[hovered.category].short}
+                    </span>{' '}
+                    {categoryBasis(hovered).text}
+                  </>
+                )}
+              </>
+            ) : 'click a district to inspect it'}
           </span>
         </span>
         <div className="cb-group">
@@ -116,7 +128,8 @@ export default function MapPanel({
             >
               <Tooltip className="district-tip">
                 <b>{fmt(c.corrected_mm ?? c.observed_mm)} mm</b> corrected<br />
-                raw {fmt(c.raw_mm)} mm · observed {fmt(c.observed_mm)} mm
+                raw {fmt(c.raw_mm)} mm · observed {fmt(c.observed_mm)} mm<br />
+                <span className="muted">{c.lat.toFixed(2)}°N {c.lon.toFixed(2)}°E</span>
               </Tooltip>
             </Rectangle>
           ))}

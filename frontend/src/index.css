@@ -383,7 +383,39 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 }
 .band-mid { position: absolute; top: 5px; bottom: 5px; width: 2px; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
 .band-raw { position: absolute; top: 2px; height: 34px; width: 2px; background: var(--red); box-shadow: 0 0 8px rgba(255, 59, 48, .7); }
-.band-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-2); }
+.band-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-2); margin-top: 2px; }
+/* IMD warning thresholds drawn through the distribution: the decision the band
+   exists to support is "does this reach 64.5 / 115.6 / 204.5 mm". */
+.band-thr { position: absolute; top: 0; bottom: 0; width: 1px; opacity: .75; }
+.band-thr.thr-heavy { background: var(--yellow); }
+.band-thr.thr-very { background: var(--orange); }
+.band-thr.thr-extremely { background: var(--red); }
+/* The corrected value is a point estimate from the correction head, drawn
+   alongside the quantile head's distribution so the two can be compared. */
+.band-corrected {
+  position: absolute; top: 3px; bottom: 3px; width: 3px; margin-left: -1px;
+  background: #fff; box-shadow: 0 0 9px rgba(255, 255, 255, .55); border-radius: 2px;
+}
+.band-key { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
+.band-key i { display: inline-block; width: 9px; height: 9px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }
+.band-key .k-band { background: rgba(0, 212, 255, .35); border: 1px solid rgba(0, 212, 255, .7); }
+.band-key .k-mid { background: #fff; }
+.band-key .k-raw { background: var(--red); }
+.band-key .k-thr { background: linear-gradient(90deg, var(--yellow) 33%, var(--orange) 33% 66%, var(--red) 66%); }
+
+/* Why a district carries its category: the criterion, named. */
+.basis {
+  display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+  margin-top: 9px; padding: 7px 9px; font-size: 12px; border-radius: 4px;
+  background: rgba(255, 255, 255, .03); border-left: 3px solid var(--line);
+}
+.basis-amount { border-left-color: var(--cyan); }
+.basis-probability { border-left-color: var(--yellow); background: rgba(255, 215, 0, .06); }
+.basis-none { border-left-color: var(--green); }
+.basis-tag {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .09em; font-weight: 700;
+  color: var(--muted-2);
+}
 
 .advisory {
   border-left: 3px solid var(--cyan); background: rgba(0, 212, 255, .07);

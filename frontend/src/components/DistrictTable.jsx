@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CATEGORY_META, fmt, pct } from '../lib/format';
+import { CATEGORY_META, categoryBasis, fmt, pct } from '../lib/format';
 
 const COLUMNS = [
   { id: 'district_name', label: 'District', type: 'text' },
@@ -66,7 +66,7 @@ export default function DistrictTable({ districts, selectedId, onSelect, filter,
                 <td className="muted">{d.state_name}</td>
                 <td>
                   <span className={`cat-chip cat-${d.category}`}
-                        title={`${CATEGORY_META[d.category].label} — ${CATEGORY_META[d.category].action}`}>
+                        title={`${CATEGORY_META[d.category].label} — ${CATEGORY_META[d.category].action}\nWhy: ${categoryBasis(d).text}`}>
                     {CATEGORY_META[d.category].short}
                   </span>
                 </td>

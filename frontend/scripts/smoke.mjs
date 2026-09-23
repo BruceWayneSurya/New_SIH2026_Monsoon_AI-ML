@@ -133,7 +133,29 @@ check('warning summary strip', html().includes('Districts warned'));
 check('regime timeline rendered', html().includes('Regime and warning timeline'));
 check('map legend present', html().includes('map-legend') || html().includes('Warning category'));
 check('district table rows', html().includes('Warning table'));
+
+// The console repeats one backend rule client-side (which criterion set a warning
+// category). If that mirror drifts, every category label in the UI becomes a lie,
+// so it is checked against the API's own labels for the whole fixture date.
+const fixtureRows = fixtures.console?.districts || [];
+const basisMismatches = fixtureRows.filter(
+  (d) => window.__format?.categoryBasis(d)?.category !== d.category);
+check('category basis mirrors the API for every district',
+  fixtureRows.length > 0 && basisMismatches.length === 0);
+if (basisMismatches.length) console.log('  disagreements:', basisMismatches.slice(0, 4).map((d) => d.district_id));
+check('every warning names a criterion', fixtureRows.filter((d) => d.category !== 'green')
+  .every((d) => window.__format?.categoryBasis(d)?.source !== 'none'));
 check('rail placeholder or detail', html().includes('District detail'));
+
+// Open a district: the rail must explain the category it is showing, which for the
+// fixture date is the worked example of a probability-driven warning.
+window.document.querySelector('table.data tbody tr')
+  ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await wait(700);
+check('rail names the criterion behind the category', html().includes('≥ 65%'));
+check('probability-driven warning is flagged as such',
+  html().includes('issued on exceedance probability'));
+check('band is annotated with its parts', html().includes('P10\u2013P90') && html().includes('IMD warning thresholds'));
 check('console fetched once per screen', calls.filter((c) => c.startsWith('/console')).length >= 1);
 
 // --- tab navigation
