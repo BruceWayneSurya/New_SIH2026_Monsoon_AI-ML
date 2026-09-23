@@ -173,10 +173,17 @@ The console is designed for a duty officer with a deadline, not for a data scien
 Every screen is a fixed layout; every state change is one round trip.
 
 ```
-OPEN  ──▶ Today console (0 clicks)
-          • opens on the most warning-heavy day of the monsoon season (§ artifact meta)
+OPEN  ──▶ Overview screen (0 clicks, no map controls to learn)
+          • full-bleed map of India, every district tinted by its warning category on the
+            most warning-heavy day of the monsoon season, hover for the values
+          • one line of state: date · districts warned · regime and confidence ·
+            peak corrected against peak raw
+          • one primary button, "Enter operations console", and one secondary,
+            "Verification & method" — the two things a visitor can want first
+             │
+        ──▶ Today console (1 click, or the `h` key to come back)
           • warning map in IMD colours, ranked district table, regime banner,
-            five-day outlook, correction-impact list
+            five-day outlook, correction-impact list, documented-case strip
              │
              ├─ change day (1 click / 1 keystroke)
              │    timeline drag · ← → · date picker · "jump to significant day"
@@ -196,14 +203,23 @@ OPEN  ──▶ Today console (0 clicks)
              │    lead-time table, regime strata, reliability diagrams, FSS,
              │    regime-value audit, PDF report
              │
-             └─ defend it (1 click)
-                  Method: architecture, module map, user flow, design rules,
-                  research basis, model card, stated limits
+             ├─ defend it (1 click)
+             │    Method: architecture, module map, user flow, design rules,
+             │    research basis, model card, stated limits
+             │
+             ├─ check a case (1 click)
+             │    Documented cases (Kerala 2018, Konkan 2019, …) load that day
+             │
+             └─ integrate it (1 click)
+                  API: every read endpoint, rendered from the live OpenAPI document,
+                  each with a one-click probe showing status, latency and payload size
 ```
 
 **Click budget.** A full operational cycle — *which day is worst → what do I warn → who signs
-off → is the system any good* — is 4 clicks. A judge demo of the whole product is one click
-("Guided demo") plus arrow keys.
+off → is the system any good* — is 4 clicks. A jury sees a live corrected field before the first
+click: the overview screen renders the warning map itself, so the pitch starts from weather
+rather than from a login screen. Keyboard-first throughout: `←/→` days, `1–5` lead, `n/p`
+significant day, `l` layer, `b` bulletin, `s` story mode, `h` overview, `?` shortcuts.
 
 **Why this shape.** SIH scoring splits roughly 30% problem understanding / 25% technical
 implementation / 20% innovation / 15% feasibility / 10% presentation, and the recorded failure
@@ -213,20 +229,48 @@ assumptions behind a chat box. The console therefore (a) speaks in IMD's own war
 (b) never hides the raw forecast behind the correction, (c) shows the failing statistical test
 next to the passing ones, and (d) runs the entire demo path offline from local artifacts.
 
-### 5.1 Demo script for a jury (about four minutes, four clicks)
+### 5.1 Demo script for a jury (about four minutes, five clicks)
 
 | Step | Do | Say |
 |---|---|---|
-| 0 | Open the console | "It opens on the most warning-heavy day of the monsoon season, already corrected and already ranked — no setup, no clicking." |
-| 1 | Point at the map | "Green to red is IMD's own warning scale. The number in each box is the corrected value; the raw model value is one layer switch away, so we are never hiding the adjustment." |
+| 0 | Open the app | "Before you click anything: this is the country on the most warning-heavy day of the season, every district coloured on IMD's own scale, and the numbers underneath are the corrected forecast against the raw one." |
+| 1 | Click **Enter operations console**, point at the map | "Green to red is IMD's own warning scale. The number in each box is the corrected value; the raw model value is one layer switch away, so we are never hiding the adjustment." |
 | 2 | Click the top district (**click 1**) | "This is the rail: the P10–P90 band, the raw model tick inside it, the regime posteriors that actually fed the correction, the advisory in English and Hindi, and the CAP fields." |
 | 3 | Press **5** for Day 5 | "Same district, five days out. Per-lead models, so the correction is refitted, not reused." |
 | 4 | Open **Bulletin** (**click 2**) and copy | "This is what the SDMA files. Machine-generated, rule-based, bilingual, with the basis and the provenance printed on it." |
 | 5 | Open **Skill lab** (**click 3**) | "And here is the part most teams skip: the claim table. Three claims supported, one not supported — regime conditioning does not significantly beat a regime-agnostic learner on the heavy-rain categorical score. We publish that, in the product and in the report." |
 | 6 | Open **Method** (**click 4**) | "Architecture, module interfaces, research basis, model card, stated limits, and the exact commands that reproduce every number you just saw." |
-| 7 | Run `python -m pytest tests/ -q` if challenged | "34 tests, including payload contracts and leakage guards." |
+| 7 | Open **API** (**click 5**) and press **Send** on any row | "The same corrections are available to a state EOC as JSON — status and latency shown live, no integration meeting needed." |
+| 8 | Run `python -m pytest tests/ -q` if challenged | "34 tests, including payload contracts and leakage guards." |
 
 The whole path works with no network: data, models, artifacts and UI are all local.
+
+### 5.2 Interface design
+
+The interface is a deliberate counter-position to the chat-box submission. It is an operations
+console: a dark surface that reads as instrumentation, colour reserved for weather, and no
+conversational framing anywhere in the product.
+
+| Rule | Why |
+|---|---|
+| Colour means weather, not decoration | Green, yellow, orange and red are IMD's warning categories and nothing else. The rainfall ramp runs pale cyan to deep violet; the correction map runs blue for a downward adjustment, amber for an upward one. |
+| One accent, used to mean "live" | A single cyan marks interactive state — the active control, the selected district, loaded data, the progress rail while a request is in flight. Nothing glows to look futuristic. |
+| Raw is always adjacent to corrected | Every corrected value on screen sits next to the raw model value and the applied adjustment, because the whole product claim is the size of that adjustment. |
+| The failing test stays on the page | The regime-conditioning claim is rendered in the same table as the supported ones, with its confidence interval and its NOT SUPPORTED verdict. |
+| Motion is state, not garnish | There is no entrance animation to sit through. The only moving elements are the loading rail and the story-mode stepper. |
+| Readable under a projector | Every foreground colour was measured against all four surfaces: the lowest ratio in the palette is 4.50:1, above the WCAG AA floor of 4.5:1; primary text sits at 14.9–17.0:1 and secondary at 10.3–11.8:1. |
+| Keyboard-first | `←/→` days, `1–5` lead day, `n/p` next or previous significant day, `l` map layer, `b` bulletin, `s` story mode, `h` overview, `?` shortcut list. A duty officer on a phone call never has to find a control. |
+| Degrade, never blank | The map sits in an error boundary; if tiles or canvas are unavailable the table, warnings and advisory still render, with a sentence saying what failed. |
+
+**The opening frame.** The first screen is the forecast itself: a full-bleed map of India with every
+district tinted by its warning category for the most warning-heavy day of the season, a strip of
+state underneath it, and one primary button. A visitor learns what the product does before deciding
+to explore it, and a jury sees a corrected rainfall field within a second of the page loading.
+
+**The API reference.** The last tab documents the service from its own OpenAPI document, so the
+reference cannot drift from the code. Each endpoint carries a **Send** button that issues a real
+probe against a date in the archive and reports status, latency and payload size — the claim
+"integration-ready" is demonstrated rather than asserted.
 
 ---
 
@@ -550,11 +594,14 @@ PYTHONPATH=. python scripts/dump_api_fixtures.py --date 2020-08-05 --lead 1   # 
   exactly**; the only difference was the new fingerprint itself. Training records sample counts
   and artifact hashes in `training_manifest.json`.
 * **Test counts.** 34 pytest tests (metrics, payload contracts, leakage guards, pipeline smoke,
-  bootstrap grouping) and 19 console smoke checks. `tests/test_api.py` locks the payload shapes
+  bootstrap grouping) and 33 console smoke checks. `tests/test_api.py` locks the payload shapes
   the UI depends on, so a schema change fails in CI rather than in the browser.
 * **The console smoke test** (`frontend/scripts/smoke.mjs`) renders the entire application in
-  jsdom against recorded API responses — including that the console fetches its screen data, that
-  the tabs render, and that keyboard navigation triggers a reload. It exists because a production
+  jsdom against recorded API responses — including that the overview screen renders before any
+  click, that entering the console and returning to the overview both work, that a documented case
+  loads its day, that the API reference degrades to its static list when the spec is unreachable,
+  that the theme tokens exist and no light-theme surface was left behind, and that keyboard
+  navigation triggers a reload. It exists because a production
   build can compile cleanly and still crash on the first payload.
 * **Recoverable UI.** The map is wrapped in an error boundary: if the tile server or canvas is
   unavailable, the rest of the console still works, because a demo that dies with a blank screen

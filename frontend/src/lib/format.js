@@ -49,8 +49,10 @@ export const RAIN_SCALE = [
 ];
 
 export const RAIN_LEGEND = [
+  // The ramp is sampled at the IMD warning thresholds so that, above 64 mm, the
+  // rainfall fill and the warning category agree on the same colour.
   ['< 1', 0.5], ['1–2', 2], ['2–10', 10], ['10–25', 25],
-  ['25–50', 50], ['50–75', 75], ['75–115', 115], ['≥ 115', 204],
+  ['25–64', 50], ['64–115', 75], ['115–204', 115], ['≥ 204', 204],
 ];
 
 export function rainColor(mm) {

@@ -4,11 +4,13 @@ import Today from './components/Today';
 import SkillLab from './components/verification/SkillLab';
 import Method from './components/verification/Method';
 import Landing from './components/Landing';
+import ApiView from './components/ApiView';
 
 const TABS = [
   { id: 'today', label: 'Today' },
   { id: 'skill', label: 'Skill lab' },
   { id: 'method', label: 'Method' },
+  { id: 'api', label: 'API' },
 ];
 
 const HOME = { tab: 'landing', date: null, lead: 1 };
@@ -132,6 +134,7 @@ export default function App() {
       )}
       {tab === 'skill' && <SkillLab />}
       {tab === 'method' && <Method />}
+      {tab === 'api' && <ApiView />}
 
       <footer className="footer">
         Research prototype. Forecast fields are produced by a synthetic physically-plausible archive

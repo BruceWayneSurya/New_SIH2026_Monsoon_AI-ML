@@ -3,6 +3,7 @@ import { api } from '../api';
 import CommandBar from './CommandBar';
 import RegimeTimeline from './RegimeTimeline';
 import MapPanel from './MapPanel';
+import CaseStrip from './CaseStrip';
 import DistrictTable from './DistrictTable';
 import DistrictRail from './DistrictRail';
 import BulletinModal from './BulletinModal';
@@ -221,6 +222,9 @@ export default function Today({ session, onSession, onToast, onTab }) {
                 date={date} lead={lead} provenance={console_?.provenance}
               />
             </ErrorBoundary>
+
+            <CaseStrip currentDate={date}
+                       onGo={(d, l) => onSession({ date: d, lead: l, source: 'case' })} />
 
             <DistrictTable districts={filtered} selectedId={selected} onSelect={setSelected}
                            filter={filter} onFilterChange={setFilter} />

@@ -31,6 +31,9 @@ async function get(path, { params, useCache = false } = {}) {
   return data;
 }
 
+/** The API prefix this build talks to (empty when FastAPI serves the bundle). */
+export const apiBase = () => BASE;
+
 export const api = {
   health: () => get('/health', { useCache: true }),
   modelCard: () => get('/model-card', { useCache: true }),

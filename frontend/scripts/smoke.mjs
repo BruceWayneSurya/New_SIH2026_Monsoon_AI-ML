@@ -145,6 +145,18 @@ check('skill lab honesty note', html().includes('Read this first'));
 check('skill lab claim table', html().includes('Claims and their verdicts'));
 check('skill lab categorical table', html().includes('Raw NWP'));
 
+// Documented cases: one click from the map to a named event.
+check('switched back to Today', clickTab('Today'));
+await wait(1100);
+check('case strip lists documented events', html().includes('Kerala orographic surge'));
+check('case click loads that day', (() => {
+  const b = buttonByText('Kerala orographic surge');
+  b?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  return !!b;
+})());
+await wait(900);
+check('case date applied to the console', calls.some((c) => c.startsWith('/console?date=2018-08-14')));
+
 check('switched to Method', clickTab('Method'));
 await wait(400);
 check('method architecture section', html().includes('System architecture and module communication'));
