@@ -261,6 +261,7 @@ conversational framing anywhere in the product.
 | Readable under a projector | Every foreground colour was measured against all four surfaces: the lowest ratio in the palette is 4.50:1, above the WCAG AA floor of 4.5:1; primary text sits at 14.9–17.0:1 and secondary at 10.3–11.8:1. |
 | Keyboard-first | `←/→` days, `1–5` lead day, `n/p` next or previous significant day, `l` map layer, `b` bulletin, `s` story mode, `h` overview, `?` shortcut list. A duty officer on a phone call never has to find a control. |
 | Degrade, never blank | The map sits in an error boundary; if tiles or canvas are unavailable the table, warnings and advisory still render, with a sentence saying what failed. |
+| Say when data is stale | If the engine does not answer for a date, the console keeps the last successful load on screen, dims it, names the date it actually belongs to, shows the HTTP detail and offers a retry — rather than silently showing yesterday's field under today's heading. |
 
 **The opening frame.** The first screen is the forecast itself: a full-bleed map of India with every
 district tinted by its warning category for the most warning-heavy day of the season, a strip of
@@ -594,14 +595,16 @@ PYTHONPATH=. python scripts/dump_api_fixtures.py --date 2020-08-05 --lead 1   # 
   exactly**; the only difference was the new fingerprint itself. Training records sample counts
   and artifact hashes in `training_manifest.json`.
 * **Test counts.** 34 pytest tests (metrics, payload contracts, leakage guards, pipeline smoke,
-  bootstrap grouping) and 38 console smoke checks. `tests/test_api.py` locks the payload shapes
+  bootstrap grouping) and 42 console smoke checks. `tests/test_api.py` locks the payload shapes
   the UI depends on, so a schema change fails in CI rather than in the browser.
 * **The console smoke test** (`frontend/scripts/smoke.mjs`) renders the entire application in
   jsdom against recorded API responses — including that the overview screen renders before any
   click, that entering the console and returning to the overview both work, that a documented case
   loads its day, that the API reference degrades to its static list when the spec is unreachable,
   that the theme tokens exist and no light-theme surface was left behind, that an API probe runs
-  and reports its outcome, and that keyboard navigation triggers a reload. It exists because a production
+  and reports its outcome, and that keyboard navigation triggers a reload. It also forces the
+  console endpoint to fail once, to prove the failure banner appears, marks the load stale, and
+  clears on retry. It exists because a production
   build can compile cleanly and still crash on the first payload.
 * **Recoverable UI.** The map is wrapped in an error boundary: if the tile server or canvas is
   unavailable, the rest of the console still works, because a demo that dies with a blank screen

@@ -29,11 +29,11 @@ export default function BulletinModal({ date, lead, onClose }) {
   };
 
   return (
-    <div style={{
+    <div className="bulletin-overlay" style={{
       position: 'fixed', inset: 0, background: 'rgba(4,10,16,.72)', backdropFilter: 'blur(3px)', zIndex: 1000,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }} onClick={onClose}>
-      <div className="panel" style={{ width: 'min(880px, 100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+      <div className="panel bulletin" style={{ width: 'min(880px, 100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
            onClick={(e) => e.stopPropagation()}>
         <div className="panel-head">
           <span className="panel-title">District warning bulletin · {date} · Day {lead}</span>

@@ -529,7 +529,37 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
 
 /* ------------------------------------------------------------------ printing */
 @media print {
-  .masthead, .commandbar, .map-wrap, .timeline, .table-scroll, .landing { display: none !important; }
-  body { background: #fff; color: #111; }
-  .panel { border-color: #ccc; box-shadow: none; }
+  /* The bulletin is the artefact that leaves the building. On paper the console's
+     dark theme would print near-white ink on white sheets, so the tokens resolve
+     to ink instead and the screen-only chrome is dropped. */
+  :root {
+    --bg-0: #fff; --bg-1: #fff; --panel: #fff; --panel-2: #fff; --panel-3: #fff;
+    --line: #c8c8c8; --line-soft: #dedede;
+    --ink: #111; --ink-2: #222; --muted: #555; --muted-2: #666;
+    --cyan: #0b5c74; --cyan-dim: #0b5c74; --cyan-soft: transparent;
+    /* Signal colours tuned for emission from black need darkening for ink on white. */
+    --green: #14663c; --yellow: #7a5c00; --orange: #a83c00; --red: #b32017;
+  }
+  * { background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  body { background: #fff !important; color: #111 !important; }
+  .masthead, .commandbar, .map-wrap, .timeline, .table-scroll, .footer, .landing,
+  .progressbar, .toast, .seg, .btn { display: none !important; }
+  .panel { border: 1px solid #c8c8c8 !important; }
+  .err { display: none !important; }
+
+  /* Only an open bulletin should print, not the dashboard behind it. */
+  .bulletin-overlay { position: static !important; background: none !important; padding: 0 !important; backdrop-filter: none !important; }
+  .bulletin { position: static !important; width: 100% !important; max-height: none !important; }
+  .bulletin .panel-body { overflow: visible !important; }
+  .bulletin pre { white-space: pre-wrap; }
+
+  /* Warning colours carry meaning even on paper, where a printer supports it. */
+  .cat-red, .cat-orange, .cat-yellow, .cat-green, .swatch {
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  a { text-decoration: none; }
 }
+
+/* Failure banner: the console keeps the last good load visible, and says so. */
+.err { border-left: 3px solid var(--red); }
+.workspace.stale > *:not(.err) { opacity: .55; }

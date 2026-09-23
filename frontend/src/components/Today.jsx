@@ -138,8 +138,25 @@ export default function Today({ session, onSession, onToast, onTab }) {
         modelScope={console_?.model_scope}
       />
 
-      <div className="workspace">
-        {error && <div className="note">Could not load this date: {error}</div>}
+      <div className={`workspace${error ? ' stale' : ''}`}>
+        {error && (
+          <div className="panel err">
+            <div className="panel-head">
+              <span className="panel-title">Could not load {date} · Day {lead}</span>
+              <button className="btn" style={{ marginLeft: 'auto' }} onClick={() => load(date, lead)}>
+                Retry
+              </button>
+            </div>
+            <div className="panel-body small">
+              The engine did not answer for this date.{' '}
+              {console_
+                ? <>Everything below is the last successful load, <b>{console_.date} · Day {console_.lead}</b> —
+                    treat it as stale until this reloads.</>
+                : 'Nothing has loaded yet, so there is nothing below to misread.'}
+              <div className="mono tiny muted" style={{ marginTop: 5 }}>{error}</div>
+            </div>
+          </div>
+        )}
 
         <div className="panel">
           <div className="summary-strip">

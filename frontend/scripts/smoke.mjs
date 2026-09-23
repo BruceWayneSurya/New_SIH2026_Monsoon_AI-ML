@@ -70,10 +70,15 @@ global.cancelAnimationFrame = clearTimeout;
 window.requestAnimationFrame = global.requestAnimationFrame;
 
 const calls = [];
+// Flipped mid-run by the failure-path checks near the end of this file.
+let failConsoleEndpoint = false;
 global.fetch = async (url) => {
   const path = String(url).replace(/^https?:\/\/[^/]+/, '');
   const clean = path.split('?')[0];
   calls.push(path);
+  if (failConsoleEndpoint && clean === '/console') {
+    return { ok: false, status: 503, text: async () => 'engine unavailable', json: async () => ({}) };
+  }
   const name = index.paths[clean]
     || index.paths[path]
     || (clean.startsWith('/district/') ? 'district' : null)
@@ -189,6 +194,21 @@ check('api probe button present', !!probeBtn);
 probeBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 await wait(400);
 check('api probe reports an outcome', /\d+ ms · [\d.]+ kB|network error/.test(html()));
+
+// --- failure path: an unreachable engine must say so, keep the last good load
+//     visible, mark it stale, and recover on retry
+clickTab('Today');
+await wait(1100);
+failConsoleEndpoint = true;
+window.dispatchEvent(new window.KeyboardEvent('keydown', { key: '3', bubbles: true }));
+await wait(600);
+check('failure banner names the date', html().includes('Could not load'));
+check('failure banner offers a retry', !!buttonByText('Retry'));
+check('stale load is marked', html().includes('stale') && html().includes('treat it as stale'));
+failConsoleEndpoint = false;
+buttonByText('Retry')?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await wait(900);
+check('retry clears the failure', !html().includes('Could not load'));
 
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: '?', bubbles: true }));
 await wait(100);
