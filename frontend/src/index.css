@@ -574,9 +574,13 @@ table.data td.num, table.data th.num { text-align: right; font-family: var(--mon
   }
   * { background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
   body { background: #fff !important; color: #111 !important; }
-  .masthead, .commandbar, .map-wrap, .timeline, .table-scroll, .footer, .landing,
+  .masthead, .commandbar, .map-wrap, .timeline, .footer, .landing,
   .progressbar, .toast, .seg, .btn { display: none !important; }
-  .panel { border: 1px solid #c8c8c8 !important; }
+  /* Scroll panes are a screen affordance; the table itself is worth printing. */
+  .table-scroll { max-height: none !important; overflow: visible !important; }
+  table.data { font-size: 10.5px; }
+  table.data th { position: static; }
+  .panel { border: 1px solid #c8c8c8 !important; break-inside: avoid; }
   .err { display: none !important; }
 
   /* Only an open bulletin should print, not the dashboard behind it. */
