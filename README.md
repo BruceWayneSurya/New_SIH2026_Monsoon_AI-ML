@@ -594,14 +594,14 @@ PYTHONPATH=. python scripts/dump_api_fixtures.py --date 2020-08-05 --lead 1   # 
   exactly**; the only difference was the new fingerprint itself. Training records sample counts
   and artifact hashes in `training_manifest.json`.
 * **Test counts.** 34 pytest tests (metrics, payload contracts, leakage guards, pipeline smoke,
-  bootstrap grouping) and 33 console smoke checks. `tests/test_api.py` locks the payload shapes
+  bootstrap grouping) and 38 console smoke checks. `tests/test_api.py` locks the payload shapes
   the UI depends on, so a schema change fails in CI rather than in the browser.
 * **The console smoke test** (`frontend/scripts/smoke.mjs`) renders the entire application in
   jsdom against recorded API responses — including that the overview screen renders before any
   click, that entering the console and returning to the overview both work, that a documented case
   loads its day, that the API reference degrades to its static list when the spec is unreachable,
-  that the theme tokens exist and no light-theme surface was left behind, and that keyboard
-  navigation triggers a reload. It exists because a production
+  that the theme tokens exist and no light-theme surface was left behind, that an API probe runs
+  and reports its outcome, and that keyboard navigation triggers a reload. It exists because a production
   build can compile cleanly and still crash on the first payload.
 * **Recoverable UI.** The map is wrapped in an error boundary: if the tile server or canvas is
   unavailable, the rest of the console still works, because a demo that dies with a blank screen

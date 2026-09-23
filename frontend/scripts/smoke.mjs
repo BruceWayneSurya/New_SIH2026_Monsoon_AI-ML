@@ -176,6 +176,20 @@ const css = readFileSync(join(root, 'src', 'index.css'), 'utf8');
 check('dark theme tokens defined', ['--bg-0', '--cyan', '--panel', '--red'].every((t) => css.includes(`${t}:`)));
 check('light theme fully retired', !css.includes('#eceff3') && !css.includes('linear-gradient(180deg, #fff'));
 check('IMD signal colours present', ['--green', '--yellow', '--orange', '--red'].every((t) => css.includes(`var(${t})`) || css.includes(`${t}:`)));
+// --- API reference
+check('switched to API reference', clickTab('API'));
+await wait(400);
+check('api view lists endpoints', html().includes('/verification/summary') && html().includes('GET'));
+check('api view degrades without the spec', html().includes('static list') || html().includes('OpenAPI'));
+
+// The probe hits a route the fixture set does not serve, so this asserts that the
+// request path runs and that its outcome renders — not that it returns 200.
+const probeBtn = buttonByText('Send');
+check('api probe button present', !!probeBtn);
+probeBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await wait(400);
+check('api probe reports an outcome', /\d+ ms · [\d.]+ kB|network error/.test(html()));
+
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: '?', bubbles: true }));
 await wait(100);
 check('shortcut help toast', html().includes('Shortcuts:'));

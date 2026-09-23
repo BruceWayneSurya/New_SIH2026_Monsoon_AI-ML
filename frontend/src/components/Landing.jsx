@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { GeoJSON, MapContainer, TileLayer, Tooltip } from 'react-leaflet';
+import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet';
 import { api } from '../api';
 import { CATEGORY_FILL, CATEGORY_META, fmt } from '../lib/format';
 
@@ -35,7 +35,7 @@ export default function Landing({ onEnter, onMethod }) {
     const m = {};
     for (const d of districts) m[d.district_id] = d;
     return m;
-  }, [districts]);
+  }, [console_]);
 
   const counts = console_?.summary?.counts;
   const maxDistrict = districts[0];

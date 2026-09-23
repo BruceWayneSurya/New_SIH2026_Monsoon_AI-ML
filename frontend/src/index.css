@@ -1,4 +1,3 @@
-@import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
 /* ===========================================================================
@@ -44,8 +43,34 @@
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-* { box-sizing: border-box; }
+/* Element reset. This console styles everything by hand, so the normalisation a
+   browser applies is undone explicitly here instead of by a framework — matching
+   what the previous preflight provided, so dropping it changes nothing on screen.
+   Content lists are the one deliberate exception: their markers are kept, because
+   the panels indent for them. */
+*, ::after, ::before { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
 html, body, #root { height: 100%; }
+html { line-height: 1.45; -webkit-text-size-adjust: 100%; tab-size: 4; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+b, strong { font-weight: 700; }
+a { color: inherit; text-decoration: inherit; }
+ol, ul { padding-left: 17px; }
+ul { list-style: disc; }
+ol { list-style: decimal; }
+li { margin: 2px 0; }
+li::marker { color: var(--muted-2); }
+svg, img, canvas { display: block; max-width: 100%; }
+table { border-collapse: collapse; border-color: inherit; text-indent: 0; }
+pre, code, kbd, samp { font-family: var(--mono); font-size: inherit; }
+h1, h2, h3, h4, h5, h6 { margin: 0; font-size: inherit; font-weight: inherit; }
+p { margin: 0; }
+ul, ol { margin: 0; padding-left: 17px; }
+ul { list-style: disc; }
+ol { list-style: decimal; }
+li { margin: 2px 0; }
+li::marker { color: var(--muted-2); }
+svg, img, canvas { display: block; max-width: 100%; }
+table { border-collapse: collapse; }
 
 body {
   margin: 0;
@@ -60,7 +85,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button { font-family: inherit; font-size: inherit; cursor: pointer; }
+/* Reproduces exactly what the framework preflight used to give buttons: the whole
+   console was authored against a transparent, borderless default, so any button
+   without its own surface (a .btn, .tab, .cta, .seg child) renders as text, not
+   as a grey OS widget. */
+button {
+  font-family: inherit; font-size: inherit; cursor: pointer;
+  background: transparent; border: 0; color: inherit;
+}
 :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 3px; }
 input, select { font-family: inherit; font-size: inherit; color-scheme: dark; }
 ::selection { background: rgba(0, 212, 255, .28); }

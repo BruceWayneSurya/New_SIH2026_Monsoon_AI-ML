@@ -41,6 +41,19 @@ const PROBE_QUERY = {
   '/export/districts.csv': 'date=2020-08-05&lead=1',
 };
 
+/** Issue one GET and report what came back, timed. Kept outside the component so
+ *  the request and its clock are plainly an effect of a click, not of a render. */
+async function probeRequest(url) {
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    return { status: res.status, ms: performance.now() - t0, bytes: text.length };
+  } catch {
+    return { status: 'network error', ms: performance.now() - t0, bytes: 0 };
+  }
+}
+
 export default function ApiView() {
   const [spec, setSpec] = useState(null);
   const [offline, setOffline] = useState(false);
@@ -75,16 +88,9 @@ export default function ApiView() {
     const query = PROBE_QUERY[probe];
     const url = `${apiBase()}${probe}${query ? `?${query}` : ''}`;
     setBusy(path);
-    const t0 = performance.now();
-    try {
-      const res = await fetch(url);
-      const text = await res.text();
-      setResult((r) => ({ ...r, [path]: { status: res.status, ms: performance.now() - t0, bytes: text.length } }));
-    } catch (e) {
-      setResult((r) => ({ ...r, [path]: { status: 'error', ms: performance.now() - t0, bytes: 0 } }));
-    } finally {
-      setBusy(null);
-    }
+    const outcome = await probeRequest(url);
+    setResult((r) => ({ ...r, [path]: outcome }));
+    setBusy(null);
   };
 
   return (
@@ -112,7 +118,7 @@ export default function ApiView() {
           <span className="tiny muted">GET only · all responses JSON except the report PDF and CSV export</span>
         </div>
         <div className="panel-body" style={{ overflowX: 'auto' }}>
-          <table className="table">
+          <table className="data">
             <thead>
               <tr>
                 <th style={{ width: 54 }}>Method</th>

@@ -27,7 +27,7 @@ function readHash() {
 }
 
 export default function App() {
-  const initial = useMemo(readHash, []);
+  const initial = useMemo(() => readHash(), []);
   const [tab, setTab] = useState(initial.tab);
   const [session, setSession] = useState({ date: initial.date, lead: initial.lead });
   const [health, setHealth] = useState(null);
