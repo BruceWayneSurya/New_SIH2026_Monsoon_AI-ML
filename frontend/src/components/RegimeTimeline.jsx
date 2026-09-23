@@ -83,7 +83,7 @@ export default function RegimeTimeline({ days, currentDate, lead = 1, onSelect }
             return (
               <div key={`${s.regime}-${s.start}`} className="timeline-band"
                    style={{ left: `${left}%`, width: `${width}%`,
-                            background: REGIME_COLOR[s.regime] || '#9aa7b4', opacity: 0.85 }} />
+                            background: REGIME_COLOR[s.regime] || '#7c8fa3', opacity: 0.42 }} />
             );
           })}
           {warnings.map((w, i) => (

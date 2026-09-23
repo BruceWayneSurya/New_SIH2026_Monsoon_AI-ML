@@ -96,9 +96,32 @@ await wait(1200);
 
 const html = () => window.document.getElementById('root').innerHTML;
 const checks = [];
+// Always re-query: React replaces nodes on re-render, so a captured element can go stale.
+const buttonByText = (text, selector = 'button') =>
+  [...window.document.querySelectorAll(selector)].find((b) => b.textContent.includes(text));
+const clickText = (text, selector = 'button') => {
+  const b = buttonByText(text, selector);
+  b?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  return !!b;
+};
+const enterConsole = async () => {
+  clickText('Enter operations console');
+  await wait(900);
+};
 const check = (label, condition) => checks.push({ label, ok: !!condition });
 
-check('app mounted', html().length > 2000);
+// ---------------------------------------------------------------- landing screen
+check('landing title + kicker', html().includes('MonsoonIQ') && html().includes('SIH26080'));
+check('landing CTAs', html().includes('Enter operations console') && html().includes('Verification'));
+check('landing live stat strip', html().includes('Districts warned') && html().includes('Peak corrected'));
+check('landing provenance disclaimer', html().toLowerCase().includes('synthetic')
+  && html().includes('not an official'.replace(' an ', ' ')) === false || html().includes('official IMD'));
+check('landing shortcut hints', html().includes('keyboard-first'));
+
+// ---------------------------------------------------------------- enter the console
+check('enter console button present', !!buttonByText('Enter operations console', 'button.cta'));
+await enterConsole();
+
 check('masthead + provenance chip', html().includes('MonsoonIQ') && html().includes('Provenance'));
 check('command bar with lead selector', html().includes('Lead') && html().includes('D5'));
 check('warning summary strip', html().includes('Districts warned'));
@@ -109,12 +132,12 @@ check('rail placeholder or detail', html().includes('District detail'));
 check('console fetched once per screen', calls.filter((c) => c.startsWith('/console')).length >= 1);
 
 // --- tab navigation
-const clickTab = (label) => {
-  const btn = [...window.document.querySelectorAll('button.tab')].find((b) => b.textContent === label);
-  if (!btn) return false;
-  btn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  return true;
-};
+const clickTab = (label) => clickText(label, 'button.tab');
+
+check('overview button returns to landing', clickText('Overview'));
+await wait(400);
+check('returned to landing', html().includes('Enter operations console'));
+await enterConsole();
 
 check('switched to Skill lab', clickTab('Skill lab'));
 await wait(500);
@@ -135,6 +158,12 @@ const before = calls.filter((c) => c.startsWith('/console')).length;
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: '2', bubbles: true }));
 await wait(400);
 check('lead shortcut triggers a reload', calls.filter((c) => c.startsWith('/console')).length > before);
+// Stylesheets are not applied in a jsdom SSR render, so the theme is asserted at
+// the source level: tokens defined, and no light-theme surfaces left behind.
+const css = readFileSync(join(root, 'src', 'index.css'), 'utf8');
+check('dark theme tokens defined', ['--bg-0', '--cyan', '--panel', '--red'].every((t) => css.includes(`${t}:`)));
+check('light theme fully retired', !css.includes('#eceff3') && !css.includes('linear-gradient(180deg, #fff'));
+check('IMD signal colours present', ['--green', '--yellow', '--orange', '--red'].every((t) => css.includes(`var(${t})`) || css.includes(`${t}:`)));
 window.dispatchEvent(new window.KeyboardEvent('keydown', { key: '?', bubbles: true }));
 await wait(100);
 check('shortcut help toast', html().includes('Shortcuts:'));

@@ -57,9 +57,9 @@ export default function CommandBar({
       <div className="cb-group">
         {counts && (
           <span className="chip" title="districts in each IMD warning category">
-            <span className="dot" style={{ background: '#b3261e' }} />{counts.red}
-            <span className="dot" style={{ background: '#c25e00', marginLeft: 6 }} />{counts.orange}
-            <span className="dot" style={{ background: '#b07d00', marginLeft: 6 }} />{counts.yellow}
+            <span className="dot" style={{ background: 'var(--red)' }} />{counts.red}
+            <span className="dot" style={{ background: 'var(--orange)', marginLeft: 6 }} />{counts.orange}
+            <span className="dot" style={{ background: 'var(--yellow)', marginLeft: 6 }} />{counts.yellow}
             <span className="muted" style={{ marginLeft: 4 }}>warned districts</span>
           </span>
         )}

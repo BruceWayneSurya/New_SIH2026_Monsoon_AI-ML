@@ -3,6 +3,7 @@ import { api } from './api';
 import Today from './components/Today';
 import SkillLab from './components/verification/SkillLab';
 import Method from './components/verification/Method';
+import Landing from './components/Landing';
 
 const TABS = [
   { id: 'today', label: 'Today' },
@@ -10,11 +11,14 @@ const TABS = [
   { id: 'method', label: 'Method' },
 ];
 
+const HOME = { tab: 'landing', date: null, lead: 1 };
+
 function readHash() {
   const h = window.location.hash.replace(/^#/, '');
+  if (!h || h === '/' || h === 'home') return HOME;
   const [tab, date, lead] = h.split('/');
   return {
-    tab: TABS.some((t) => t.id === tab) ? tab : 'today',
+    tab: TABS.some((t) => t.id === tab) ? tab : 'landing',
     date: /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date : null,
     lead: /^[1-5]$/.test(lead || '') ? Number(lead) : 1,
   };
@@ -27,11 +31,18 @@ export default function App() {
   const [health, setHealth] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => { api.health().then(setHealth).catch(() => setHealth(null)); }, []);
+  useEffect(() => {
+    const poll = () => api.health().then(setHealth).catch(() => setHealth(null));
+    poll();
+    const t = setInterval(poll, 60000);
+    return () => clearInterval(t);
+  }, []);
 
   // The hash is the shareable link: #today/2019-07-26/3 opens that view directly.
   useEffect(() => {
-    const next = `#${tab}${session.date ? `/${session.date}/${session.lead}` : ''}`;
+    const next = tab === 'landing'
+      ? '#/'
+      : `#${tab}${session.date ? `/${session.date}/${session.lead}` : ''}`;
     if (window.location.hash !== next) window.history.replaceState(null, '', next);
   }, [tab, session]);
 
@@ -57,7 +68,8 @@ export default function App() {
     const onKey = (e) => {
       const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName);
       if (typing) return;
-      if (e.key === '?') setToast('Shortcuts: ← → days · 1-5 lead · n/p significant day · l map layer · b bulletin · s story mode');
+      if (e.key === '?') setToast('Shortcuts: ← → days · 1-5 lead · n/p significant day · l map layer · b bulletin · s story mode · h overview');
+      if (e.key === 'h') setTab('landing');
       if (e.key === 'l') {
         window.dispatchEvent(new CustomEvent('monsooniq:cycle-layer'));
       }
@@ -68,21 +80,33 @@ export default function App() {
 
   const freshness = health?.loaded_utc;
 
+  if (tab === 'landing') {
+    return (
+      <Landing
+        onEnter={(date) => {
+          setSession((s) => ({ ...s, date: s.date || date || null, lead: 1 }));
+          setTab('today');
+        }}
+        onMethod={() => setTab('skill')}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="masthead">
         <div className="masthead-inner">
-          <div className="brand">
+          <button className="brand" onClick={() => setTab('landing')}
+                  title="Back to the overview" style={{ background: 'none', border: 0, padding: 0 }}>
             <span className="brand-mark">MonsoonIQ</span>
             <span className="brand-sub">
               Regime-aware post-processing of NWP rainfall · IMD warning scale
             </span>
-          </div>
+          </button>
           <div className="cb-group" style={{ marginLeft: 12 }}>
-            <span className={`chip${health?.provenance?.includes('SYNTHETIC') ? ' warn' : ''}`}
-                  title={health ? JSON.stringify(health.artifacts) : ''}>
-              <span className="dot" style={{ background: health?.status === 'healthy' ? '#1c7c3f' : '#b07d00' }} />
-              {health?.status === 'healthy' ? 'Engine ready' : 'Engine degraded'}
+            <span className="chip live" title={health ? JSON.stringify(health.artifacts) : ''}>
+              <span className="dot" />
+              {health?.status === 'healthy' ? 'Live · engine ready' : 'Engine degraded'}
             </span>
             <span className="chip" title="data provenance — synthetic archive, not live IMD data">
               {health?.provenance === 'SYNTHETIC_PHYSICALLY_PLAUSIBLE'
@@ -90,6 +114,9 @@ export default function App() {
                 : `Provenance: ${health?.provenance || 'unknown'}`}
             </span>
             {freshness && <span className="chip">Models loaded {freshness}</span>}
+            <button className="btn" onClick={() => setTab('landing')} title="Overview screen (h)">
+              Overview
+            </button>
           </div>
           <nav className="tabs" role="tablist">
             {TABS.map((t) => (
@@ -116,7 +143,8 @@ export default function App() {
       {toast && (
         <div style={{
           position: 'fixed', bottom: 18, left: '50%', transform: 'translateX(-50%)',
-          background: '#101820', color: '#fff', padding: '8px 14px', borderRadius: 4,
+          background: 'rgba(10,25,41,.97)', color: 'var(--ink)', padding: '9px 15px', borderRadius: 5,
+          border: '1px solid rgba(0,212,255,.4)', boxShadow: '0 8px 30px rgba(0,0,0,.55)',
           fontSize: 12.5, zIndex: 1500, maxWidth: '90vw',
         }}>{toast}</div>
       )}

@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { GeoJSON, MapContainer, TileLayer, CircleMarker, Tooltip, Rectangle } from 'react-leaflet';
 import {
-  CATEGORY_COLOR, CATEGORY_FILL, REGIME_COLOR, rainColor, adjustmentColor,
-  probabilityColor, fmt, pct,
+  CATEGORY_META, CATEGORY_FILL, REGIME_COLOR, RAIN_LEGEND, rainColor, adjustmentColor,
+  probabilityColor, fmt,
 } from '../lib/format';
 
 const LAYERS = [
@@ -20,15 +20,15 @@ const VIEWS = [
 
 export default function MapPanel({
   geojson, districts, selectedId, onSelect, layer, onLayer, view, onView,
-  grid, gridDates, gridDate, onGridDate,
+  grid, gridDates, gridDate, onGridDate, date, lead, provenance,
 }) {
   const [hovered, setHovered] = useState(null);
 
   const styleFor = (featureId) => {
     const d = districts?.find((x) => x.district_id === featureId);
-    if (!d) return { color: '#b9c4cf', weight: 1, fillColor: '#e9eef3', fillOpacity: 0.7 };
+    if (!d) return { color: '#12293c', weight: 1, fillColor: '#0e1f2e', fillOpacity: 0.55 };
     const selected = d.district_id === selectedId;
-    let fill = '#eef2f6';
+    let fill = '#16324a';
     if (layer === 'category') fill = CATEGORY_FILL[d.category];
     else if (layer === 'corrected') fill = rainColor(d.corrected_mm);
     else if (layer === 'raw') fill = rainColor(d.raw_mm);
@@ -36,10 +36,10 @@ export default function MapPanel({
     else if (layer === 'p_heavy') fill = probabilityColor(d.p_heavy);
     else if (layer === 'regime') fill = REGIME_COLOR[d.regime] || '#9aa7b4';
     return {
-      color: selected ? '#101820' : '#8b98a5',
-      weight: selected ? 2.4 : 0.8,
+      color: selected ? '#00d4ff' : (d.category === 'green' ? '#12293c' : '#061019'),
+      weight: selected ? 2.6 : (d.category === 'red' ? 1.3 : 0.7),
       fillColor: fill,
-      fillOpacity: 0.92,
+      fillOpacity: d.category === 'green' ? 0.8 : 0.94,
     };
   };
 
@@ -47,7 +47,7 @@ export default function MapPanel({
     const d = districts?.find((x) => x.district_id === feature.properties.district_id);
     lyr.on({
       click: () => onSelect(feature.properties.district_id),
-      mouseover: () => { lyr.setStyle({ weight: 2.2, color: '#101820' }); setHovered(d); },
+      mouseover: () => { lyr.setStyle({ weight: 2.4, color: '#00d4ff' }); setHovered(d); },
       mouseout: () => { lyr.setStyle(styleFor(feature.properties.district_id)); setHovered(null); },
     });
   };
@@ -59,7 +59,7 @@ export default function MapPanel({
       <div className="panel-head">
         <span className="panel-title">
           Spatial view
-          <span className="muted small" style={{ marginLeft: 8, fontWeight: 400 }}>
+          <span className="muted small" style={{ marginLeft: 8, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>
             {hovered
               ? `${hovered.district_name} — ${fmt(hovered.corrected_mm)} mm corrected, raw ${fmt(hovered.raw_mm)} mm`
               : 'click a district to inspect it'}
@@ -79,7 +79,8 @@ export default function MapPanel({
         </div>
       </div>
 
-      <div className="map-wrap">
+      <div className="map-wrap" role="application"
+           aria-label={`District map, layer: ${LAYERS.find((l) => l.id === layer)?.label || layer}`}>
         <div className="map-overlay">
           <div className="seg">
             {LAYERS.map((l) => (
@@ -90,7 +91,7 @@ export default function MapPanel({
 
         <MapContainer center={center} zoom={5} scrollWheelZoom preferCanvas>
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; OpenStreetMap, &copy; CARTO'
           />
 
@@ -125,14 +126,27 @@ export default function MapPanel({
           )}
         </MapContainer>
 
+        <div className="map-meta tiny muted mono">
+          {date ? `${date} · Day ${lead}` : 'spatial view'}
+          {provenance ? ` · ${String(provenance).replace(/_/g, ' ').toLowerCase()}` : ''}
+        </div>
+
         <div className="map-legend">
-          {layer === 'category' && ['red', 'orange', 'yellow', 'green'].map((c) => (
-            <div key={c}><span className="swatch" style={{ background: CATEGORY_FILL[c] }} />{c}</div>
-          ))}
+          {layer === 'category' && (
+            <>
+              <div><b className="small">IMD warning category</b></div>
+              {['red', 'orange', 'yellow', 'green'].map((c) => (
+                <div key={c}>
+                  <span className="swatch" style={{ background: CATEGORY_FILL[c] }} />
+                  {CATEGORY_META[c].short.toLowerCase()} · {CATEGORY_META[c].mm} mm
+                </div>
+              ))}
+            </>
+          )}
           {(layer === 'corrected' || layer === 'raw') && (
             <>
               <div><b className="small">24 h rainfall</b></div>
-              {[[0.5, '< 1'], [2, '1–2'], [10, '2–10'], [25, '10–25'], [50, '25–50'], [75, '50–75'], [115, '75–115'], [204, '≥ 204']].map(([v, label]) => (
+              {RAIN_LEGEND.map(([label, v]) => (
                 <div key={label}><span className="swatch" style={{ background: rainColor(v) }} />{label} mm</div>
               ))}
             </>

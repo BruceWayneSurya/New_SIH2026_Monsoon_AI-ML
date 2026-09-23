@@ -92,8 +92,9 @@ export default function StoryMode({ onClose, onNavigate, currentDate, onLayer, o
   return (
     <div style={{
       position: 'fixed', left: 16, right: 16, bottom: 16, zIndex: 1200,
-      background: '#fff', border: '1px solid #c6d6e6', borderRadius: 6,
-      boxShadow: '0 8px 28px rgba(16,24,32,.18)', maxWidth: 900, margin: '0 auto',
+      background: 'rgba(10, 25, 41, .97)', border: '1px solid rgba(0, 212, 255, .45)',
+      borderRadius: 6, backdropFilter: 'blur(8px)',
+      boxShadow: '0 10px 40px rgba(0,0,0,.6), 0 0 26px rgba(0,212,255,.16)', maxWidth: 940, margin: '0 auto',
     }}>
       <div className="panel-head" style={{ borderBottom: '1px solid var(--line-soft)' }}>
         <span className="panel-title">
@@ -112,13 +113,14 @@ export default function StoryMode({ onClose, onNavigate, currentDate, onLayer, o
         </div>
       </div>
       <div className="panel-body">
-        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>{beat.title}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 5, color: '#e9f2fa' }}>{beat.title}</div>
         <div className="small" style={{ maxWidth: 760 }}>{beat.body}</div>
         <div style={{ display: 'flex', gap: 4, marginTop: 10 }}>
           {BEATS.map((b, k) => (
             <button key={b.id} onClick={() => setI(k)} title={b.title}
                     style={{ flex: 1, height: 5, border: 0, borderRadius: 3, padding: 0,
-                             background: k <= i ? '#14487f' : '#dfe6ec' }} />
+                             background: k <= i ? '#00d4ff' : '#1b3549',
+                             boxShadow: k === i ? '0 0 10px rgba(0,212,255,.7)' : 'none' }} />
           ))}
         </div>
       </div>

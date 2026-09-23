@@ -91,7 +91,7 @@ export default function DistrictRail({ districtId, date, lead, onClose }) {
             </div>
             <div className="stat">
               <div className="k">Raw model</div>
-              <div className="v" style={{ color: '#64748b' }}>{fmt(data.raw_mm)}<span className="u"> mm</span></div>
+              <div className="v" style={{ color: 'var(--muted)' }}>{fmt(data.raw_mm)}<span className="u"> mm</span></div>
             </div>
             <div className="stat">
               <div className="k">Correction</div>

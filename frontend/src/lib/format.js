@@ -1,4 +1,4 @@
-/** Shared formatting and the IMD warning scale. */
+/** Shared formatting, the IMD warning scale, and the dark-console colour maps. */
 
 export const CATEGORIES = ['green', 'yellow', 'orange', 'red'];
 
@@ -9,67 +9,88 @@ export const CATEGORY_META = {
   red: { label: 'Warning', short: 'RED', action: 'Take action', mm: '≥ 204.5' },
 };
 
+/** Signal colours (text, borders, strokes). */
 export const CATEGORY_COLOR = {
-  green: '#1c7c3f',
-  yellow: '#b07d00',
-  orange: '#c25e00',
-  red: '#b3261e',
+  green: '#00e07a',
+  yellow: '#ffd700',
+  orange: '#ff6b35',
+  red: '#ff3b30',
 };
 
+/** Area fills for maps and chips — darker so they sit under the labels. */
 export const CATEGORY_FILL = {
-  green: '#cfe9d8',
-  yellow: '#f7e3a8',
-  orange: '#f6c9a4',
-  red: '#f0b3ae',
+  green: '#17734b',
+  yellow: '#c39c0e',
+  orange: '#d15c1d',
+  red: '#d02f26',
 };
 
-/** Rainfall scale used for the map's "corrected" layer. */
+export const CATEGORY_FILL_SOFT = {
+  green: 'rgba(0, 224, 122, .14)',
+  yellow: 'rgba(255, 215, 0, .14)',
+  orange: 'rgba(255, 107, 53, .16)',
+  red: 'rgba(255, 59, 48, .18)',
+};
+
+/**
+ * Rainfall ramp for the dark basemap: deep blue through cyan to the standard
+ * radar yellow/orange/red. Sequential, colour-blind safe at the top end, and it
+ * reads on a black basemap without washing out the warning map.
+ */
 export const RAIN_SCALE = [
-  [0.5, '#eef4f8'],
-  [2, '#cfe4f2'],
-  [10, '#a5cdea'],
-  [25, '#6fa9d8'],
-  [50, '#3f7fbd'],
-  [75, '#f0c14b'],
-  [115, '#e08b2b'],
-  [204, '#c0392b'],
+  [0.5, '#16324a'],
+  [2, '#1b4a70'],
+  [10, '#22679a'],
+  [25, '#2e8fbe'],
+  [50, '#43b9d4'],
+  [75, '#ffd700'],
+  [115, '#ff6b35'],
+  [204, '#ff3b30'],
+];
+
+export const RAIN_LEGEND = [
+  ['< 1', 0.5], ['1–2', 2], ['2–10', 10], ['10–25', 25],
+  ['25–50', 50], ['50–75', 75], ['75–115', 115], ['≥ 115', 204],
 ];
 
 export function rainColor(mm) {
-  if (mm === null || mm === undefined || Number.isNaN(mm)) return '#dfe6ec';
+  if (mm === null || mm === undefined || Number.isNaN(mm)) return '#122838';
   let color = RAIN_SCALE[0][1];
   for (const [threshold, c] of RAIN_SCALE) if (mm >= threshold) color = c;
   return color;
 }
 
+/** Correction map: green = forecast made wetter, red = made drier. */
 export function adjustmentColor(mm) {
-  if (mm === null || mm === undefined || Number.isNaN(mm)) return '#dfe6ec';
-  if (mm > 25) return '#14603a';
-  if (mm > 8) return '#4f9a6d';
-  if (mm > 1) return '#cfe4d6';
-  if (mm < -25) return '#8c1f1a';
-  if (mm < -8) return '#c0645c';
-  if (mm < -1) return '#f2d5d2';
-  return '#eef1f4';
+  if (mm === null || mm === undefined || Number.isNaN(mm)) return '#122838';
+  if (mm > 40) return '#00e07a';
+  if (mm > 15) return '#12a862';
+  if (mm > 4) return '#0d5c3c';
+  if (mm > 0) return '#123a30';
+  if (mm < -40) return '#ff3b30';
+  if (mm < -15) return '#c02a22';
+  if (mm < -4) return '#6d1a16';
+  if (mm < 0) return '#3a1d1c';
+  return '#122838';
 }
 
 export function probabilityColor(p) {
-  if (p === null || p === undefined) return '#dfe6ec';
-  if (p >= 0.75) return '#8c1f1a';
-  if (p >= 0.5) return '#c25e00';
-  if (p >= 0.3) return '#d8a516';
-  if (p >= 0.15) return '#dfe3a0';
-  return '#eef4f8';
+  if (p === null || p === undefined) return '#122838';
+  if (p >= 0.75) return '#ff3b30';
+  if (p >= 0.5) return '#ff6b35';
+  if (p >= 0.3) return '#ffd700';
+  if (p >= 0.15) return '#4f7a12';
+  return '#16324a';
 }
 
 export const REGIME_COLOR = {
-  'Active Monsoon': '#1b6ec2',
-  'Break Monsoon': '#c98a2b',
-  'Monsoon Low/Depression': '#8e44ad',
-  Orographic: '#1c7c3f',
-  Coastal: '#0f8b8d',
-  'Western Disturbance': '#7a6a52',
-  'Weak/Normal': '#9aa7b4',
+  'Active Monsoon': '#3aa0ff',
+  'Break Monsoon': '#ffb74d',
+  'Monsoon Low/Depression': '#b06bff',
+  Orographic: '#00e07a',
+  Coastal: '#20b2aa',
+  'Western Disturbance': '#b09a7a',
+  'Weak/Normal': '#7c8fa3',
 };
 
 export const REGIME_SHORT = {
@@ -98,22 +119,22 @@ export function signed(value, digits = 1) {
   return `${v > 0 ? '+' : ''}${v.toFixed(digits)}`;
 }
 
+export function reliabilityClass(level) {
+  if (level === 'reliable') return 'reliability-ok';
+  if (level === 'indicative') return 'reliability-warn';
+  return 'suppressed';
+}
+
 export function longDate(iso) {
   if (!iso) return '—';
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString('en-IN', {
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-IN', {
     weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC',
   });
 }
 
 export function shortDate(iso) {
   if (!iso) return '—';
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', timeZone: 'UTC' });
-}
-
-export function reliabilityClass(level) {
-  if (level === 'reliable') return 'reliability-ok';
-  if (level === 'indicative') return 'reliability-warn';
-  return 'suppressed';
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', timeZone: 'UTC',
+  });
 }

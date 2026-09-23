@@ -68,7 +68,7 @@ export default function Method() {
           <span className="tiny muted">offline pipeline (top) → serving path (bottom)</span>
         </div>
         <div className="panel-body">
-          <pre className="mono" style={{ background: '#0f1c28', color: '#dbe7f2', padding: 12, borderRadius: 4, overflowX: 'auto', fontSize: 11.5 }}>{PIPELINE}</pre>
+          <pre className="mono term" style={{ fontSize: 11.5 }}>{PIPELINE}</pre>
           <table className="data" style={{ marginTop: 10 }}>
             <thead><tr><th>Module</th><th>Responsibility</th><th>Interface</th></tr></thead>
             <tbody>
@@ -206,7 +206,7 @@ export default function Method() {
               </ul>
               <div style={{ marginTop: 8 }}>
                 <b>Reproduce everything:</b>
-                <div className="mono small" style={{ background: '#0f1c28', color: '#dbe7f2', padding: 8, borderRadius: 4, marginTop: 4 }}>
+                <div className="mono small term" style={{ marginTop: 4 }}>
                   make data && make train && make evaluate && pytest tests/ -q
                 </div>
               </div>

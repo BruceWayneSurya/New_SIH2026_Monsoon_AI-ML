@@ -118,6 +118,7 @@ export default function Today({ session, onSession, onToast, onTab }) {
 
   return (
     <>
+      {busy && <div className="progressbar" role="progressbar" aria-label="loading forecast" />}
       <CommandBar
         date={date}
         lead={lead}
@@ -153,17 +154,17 @@ export default function Today({ session, onSession, onToast, onTab }) {
               </div>
               <div className="u">classifier confidence {pct(console_?.regime?.confidence, 0)}</div>
             </div>
-            <div className="stat">
+            <div className={`stat${(counts?.red ?? 0) > 0 ? ' hot' : ''}`}>
               <div className="k">Districts warned</div>
               <div className="v">{console_?.summary?.districts_in_warning ?? '—'}
                 <span className="u"> / {districts.length}</span></div>
               <div className="u">
-                <span style={{ color: '#b3261e' }}>■</span> {counts?.red ?? 0}
-                {' '}<span style={{ color: '#c25e00' }}>■</span> {counts?.orange ?? 0}
-                {' '}<span style={{ color: '#b07d00' }}>■</span> {counts?.yellow ?? 0}
+                <span style={{ color: 'var(--red)' }}>■</span> {counts?.red ?? 0}
+                {' '}<span style={{ color: 'var(--orange)' }}>■</span> {counts?.orange ?? 0}
+                {' '}<span style={{ color: 'var(--yellow)' }}>■</span> {counts?.yellow ?? 0}
               </div>
             </div>
-            <div className="stat">
+            <div className={`stat${(console_?.summary?.max_corrected_mm ?? 0) >= 204.5 ? ' hot' : ''}`}>
               <div className="k">Highest corrected</div>
               <div className="v">{fmt(console_?.summary?.max_corrected_mm)}<span className="u"> mm</span></div>
               <div className="u">raw model {fmt(console_?.summary?.max_raw_mm)} mm</div>
@@ -175,7 +176,7 @@ export default function Today({ session, onSession, onToast, onTab }) {
             </div>
             <div className="stat">
               <div className="k">Worst observed</div>
-              <div className="v" style={{ color: '#64748b' }}>{fmt(console_?.summary?.max_observed_mm)}<span className="u"> mm</span></div>
+              <div className="v" style={{ color: 'var(--muted)' }}>{fmt(console_?.summary?.max_observed_mm)}<span className="u"> mm</span></div>
               <div className="u">reference only, not a model input</div>
             </div>
           </div>
@@ -190,7 +191,7 @@ export default function Today({ session, onSession, onToast, onTab }) {
                   const width = Math.max(120, Math.min(240, (h.max_corrected_mm / 320) * 240));
                   return (
                     <button key={h.lead} onClick={() => onSession({ lead: h.lead })}
-                            className="panel" style={{ padding: '6px 9px', minWidth: width, textAlign: 'left', border: lead === h.lead ? '1px solid #14487f' : '1px solid var(--line)' }}>
+                            className="panel" style={{ padding: '6px 9px', minWidth: width, textAlign: 'left', border: lead === h.lead ? '1px solid var(--cyan)' : '1px solid var(--line)', boxShadow: lead === h.lead ? '0 0 16px rgba(0,212,255,.20)' : 'none' }}>
                       <div className="tiny muted">DAY {h.lead}{lead === h.lead ? ' · shown' : ''}</div>
                       <div className="mono" style={{ fontSize: 14, fontWeight: 600 }}>{fmt(h.max_corrected_mm)} mm</div>
                       <div className="tiny">
@@ -217,6 +218,7 @@ export default function Today({ session, onSession, onToast, onTab }) {
                 geojson={geojson} districts={districts} selectedId={selected} onSelect={setSelected}
                 layer={layer} onLayer={setLayer} view={view} onView={setView}
                 grid={grid} gridDates={gridDates} gridDate={gridDates[0]} onGridDate={() => {}}
+                date={date} lead={lead} provenance={console_?.provenance}
               />
             </ErrorBoundary>
 
@@ -242,7 +244,7 @@ export default function Today({ session, onSession, onToast, onTab }) {
                         <div className="bar-fill"
                              style={{
                                width: `${Math.min(Math.abs(d.adjustment_mm) / 120 * 100, 100)}%`,
-                               background: d.adjustment_mm >= 0 ? '#14603a' : '#b3261e',
+                               background: d.adjustment_mm >= 0 ? 'var(--green)' : 'var(--red)',
                              }} />
                       </div>
                       <span className="num small">

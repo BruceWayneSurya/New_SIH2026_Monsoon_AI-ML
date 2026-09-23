@@ -29,14 +29,14 @@ function ReliabilityDiagram({ diagram }) {
   const pts = diagram.mean_forecast_probs.map((p, i) => [p, diagram.observed_frequencies[i], diagram.sample_counts[i]]);
   return (
     <svg width={size} height={size} role="img" aria-label="reliability diagram">
-      <rect x={pad} y={pad} width={size - pad * 2} height={size - pad * 2} fill="#f8fafc" stroke="#d7dee5" />
-      <line x1={x(0)} y1={y(0)} x2={x(1)} y2={y(1)} stroke="#a9b6c2" strokeDasharray="3 3" />
+      <rect x={pad} y={pad} width={size - pad * 2} height={size - pad * 2} fill="#08151f" stroke="#1b3549" />
+      <line x1={x(0)} y1={y(0)} x2={x(1)} y2={y(1)} stroke="#2b5a7d" strokeDasharray="3 3" />
       {pts.map(([p, f, n], i) => (
         <circle key={i} cx={x(p)} cy={y(f)} r={2 + Math.min(Math.sqrt(n) / 8, 4)}
-                fill="#14487f" fillOpacity="0.75" />
+                fill="#00d4ff" fillOpacity="0.85" />
       ))}
-      <text x={size / 2} y={size - 6} fontSize="9" textAnchor="middle" fill="#64748b">forecast probability →</text>
-      <text x={9} y={size / 2} fontSize="9" textAnchor="middle" fill="#64748b"
+      <text x={size / 2} y={size - 6} fontSize="9" textAnchor="middle" fill="#7f97ab">forecast probability →</text>
+      <text x={9} y={size / 2} fontSize="9" textAnchor="middle" fill="#7f97ab"
             transform={`rotate(-90 9 ${size / 2})`}>observed frequency →</text>
     </svg>
   );
@@ -58,18 +58,18 @@ function AccuracySweep({ sweep, agnosticCsi }) {
     .map((s) => `${px(s.regime_classifier_accuracy)},${py(s.moe_heavy_csi)}`).join(' ');
   return (
     <svg width={w} height={h} role="img" aria-label="regime classifier accuracy sweep">
-      <rect x={pad} y={pad} width={w - pad * 2} height={h - pad * 2} fill="#f8fafc" stroke="#d7dee5" />
+      <rect x={pad} y={pad} width={w - pad * 2} height={h - pad * 2} fill="#08151f" stroke="#1b3549" />
       <line x1={pad} y1={py(agnosticCsi)} x2={w - pad} y2={py(agnosticCsi)}
-            stroke="#b3261e" strokeDasharray="4 3" />
-      <text x={w - pad} y={py(agnosticCsi) - 3} fontSize="9" textAnchor="end" fill="#b3261e">
+            stroke="#ff3b30" strokeDasharray="4 3" />
+      <text x={w - pad} y={py(agnosticCsi) - 3} fontSize="9" textAnchor="end" fill="#ff7369">
         regime-agnostic baseline {fmt(agnosticCsi, 3)}
       </text>
-      <polyline points={line} fill="none" stroke="#14487f" strokeWidth="2" />
+      <polyline points={line} fill="none" stroke="#00d4ff" strokeWidth="2" />
       {sweep.map((s) => (
         <circle key={s.regime_classifier_accuracy} cx={px(s.regime_classifier_accuracy)}
-                cy={py(s.moe_heavy_csi)} r="3" fill="#14487f" />
+                cy={py(s.moe_heavy_csi)} r="3" fill="#00d4ff" />
       ))}
-      <text x={w / 2} y={h - 6} fontSize="9" textAnchor="middle" fill="#64748b">classifier accuracy →</text>
+      <text x={w / 2} y={h - 6} fontSize="9" textAnchor="middle" fill="#7f97ab">classifier accuracy →</text>
     </svg>
   );
 }
@@ -124,7 +124,7 @@ export default function SkillLab() {
           return (
             <div className="card" key={c.label}>
               <h3>{c.label}</h3>
-              <div className="big">{fmt(c.corrected, c.unit ? 2 : 3)}<span className="u" style={{ fontSize: 12, color: '#64748b' }}> {c.unit}</span></div>
+              <div className="big">{fmt(c.corrected, c.unit ? 2 : 3)}<span className="u" style={{ fontSize: 12, color: 'var(--muted)' }}> {c.unit}</span></div>
               <div className="small muted">
                 raw {fmt(c.raw, 3)} → agnostic {fmt(c.baseline, 3)}
               </div>
@@ -480,7 +480,7 @@ export default function SkillLab() {
             <a className="btn" href={api.reportPdfUrl()} target="_blank" rel="noreferrer">Open PDF report</a>
           </div>
           <div className="panel-body">
-            <div className="mono small" style={{ background: '#0f1c28', color: '#dbe7f2', padding: 10, borderRadius: 4 }}>
+            <div className="mono small term">
               make data&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# deterministic synthetic archive<br />
               make train&nbsp;&nbsp;&nbsp;&nbsp;# classifier, per-lead correction, exceedance, grid model<br />
               make evaluate&nbsp;# writes the artifacts this page reads<br />

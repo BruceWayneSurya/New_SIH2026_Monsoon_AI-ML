@@ -73,7 +73,7 @@ export default function DistrictTable({ districts, selectedId, onSelect, filter,
                 <td className="small">{d.regime}</td>
                 <td className="num">{fmt(d.raw_mm)}</td>
                 <td className="num"><b>{fmt(d.corrected_mm)}</b></td>
-                <td className="num" style={{ color: d.adjustment_mm > 0 ? '#14603a' : d.adjustment_mm < 0 ? '#8c1f1a' : undefined }}>
+                <td className="num" style={{ color: d.adjustment_mm > 0 ? 'var(--green)' : d.adjustment_mm < 0 ? 'var(--red)' : undefined }}>
                   {d.adjustment_mm > 0 ? '+' : ''}{fmt(d.adjustment_mm)}
                 </td>
                 <td className="num">{fmt(d.p90_mm, 0)}</td>
